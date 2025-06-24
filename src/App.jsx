@@ -17,13 +17,11 @@ import { KnowledgeTransferPackageDetail } from './pages/KnowledgeTransfer/Knowle
 import { KnowledgeTransferEnrollmentDetail } from './pages/KnowledgeTransfer/KnowledgeTransferEnrollmentDetail';
 import { KnowledgeTransferAssessment } from './pages/KnowledgeTransfer/KnowledgeTransferAssessment';
 // Admin Pages
-import { AdminDashboard } from './pages/Admin/AdminDashboard';
-import { AdminOrganizations } from './pages/Admin/AdminOrganizations';
-import { AdminUsers } from './pages/Admin/AdminUsers';
-import { AdminAnalytics } from './pages/Admin/AdminAnalytics';
-import { AdminSettings } from './pages/Admin/AdminSettings';
-import { OrganizationDetail } from './pages/Admin/OrganizationDetail';
-import { UserDetail } from './pages/Admin/UserDetail';
+import { Organizations } from './pages/Organizations';
+import { OrganizationDetail } from './pages/OrganizationDetail';
+import { Users } from './pages/Users';
+import { UserDetail } from './pages/UserDetail';
+import { Analytics } from './pages/Analytics';
 
 function App() {
   return (
@@ -48,14 +46,12 @@ function App() {
             <Route path="knowledge-transfer/enrollments/:enrollmentId" element={<KnowledgeTransferEnrollmentDetail />} />
             <Route path="knowledge-transfer/assessments/:assessmentId" element={<KnowledgeTransferAssessment />} />
             
-            {/* Admin Routes */}
-            <Route path="admin" element={<AdminDashboard />} />
-            <Route path="admin/organizations" element={<AdminOrganizations />} />
-            <Route path="admin/organizations/:organizationId" element={<OrganizationDetail />} />
-            <Route path="admin/users" element={<AdminUsers />} />
-            <Route path="admin/users/:userId" element={<UserDetail />} />
-            <Route path="admin/analytics" element={<AdminAnalytics />} />
-            <Route path="admin/settings" element={<AdminSettings />} />
+            {/* Admin Routes - now accessible via role-based permissions */}
+            <Route path="organizations" element={<Organizations />} />
+            <Route path="organizations/:organizationId" element={<OrganizationDetail />} />
+            <Route path="users" element={<Users />} />
+            <Route path="users/:userId" element={<UserDetail />} />
+            <Route path="analytics" element={<Analytics />} />
           </Route>
         </Routes>
       </Router>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, HelpCircle, Settings } from 'lucide-react';
+import { Bell, Search, User, HelpCircle, Settings, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useApp } from '../../contexts/AppContext';
+import { useApp, isAdmin } from '../../contexts/AppContext';
 import { useGuidance } from '../../hooks/useGuidance';
 import { HintTooltip } from '../Guidance/HintTooltip';
 
@@ -28,6 +28,14 @@ export function Header() {
           </div>
           
           <div className="flex items-center space-x-4">
+            {/* Admin Badge - Only shown to admins */}
+            {isAdmin(state.currentUser) && (
+              <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-medium flex items-center">
+                <Shield className="w-3 h-3 mr-1" />
+                Admin
+              </div>
+            )}
+            
             {/* Guidance Menu */}
             <div className="relative">
               <HintTooltip hint="Access help and guidance options" position="bottom">
@@ -93,8 +101,8 @@ export function Header() {
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="hidden md:block">
-                <p className="text-sm font-medium text-gray-900">John Doe</p>
-                <p className="text-xs text-gray-500">john@example.com</p>
+                <p className="text-sm font-medium text-gray-900">{state.currentUser.firstName} {state.currentUser.lastName}</p>
+                <p className="text-xs text-gray-500">{state.currentUser.email}</p>
               </div>
             </div>
           </div>

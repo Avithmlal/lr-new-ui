@@ -15,33 +15,36 @@ import {
   Brain,
   Video
 } from 'lucide-react';
-import { useApp } from '../../contexts/AppContext';
-
-const userNavigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Projects', href: '/projects', icon: FolderOpen },
-  { name: 'Courses', href: '/courses', icon: GraduationCap },
-  { name: 'Videos', href: '/videos', icon: Video },
-  { name: 'Billy Chat', href: '/chat', icon: MessageSquare },
-  { name: 'Knowledge Plans', href: '/knowledge-transfer', icon: Brain },
-  { name: 'Avatars', href: '/avatars', icon: Users },
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
-
-const adminNavigation = [
-  { name: 'Admin Dashboard', href: '/admin', icon: Shield },
-  { name: 'Organizations', href: '/admin/organizations', icon: Building2 },
-  { name: 'Users', href: '/admin/users', icon: UserCog },
-  { name: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/admin/settings', icon: Settings },
-];
+import { useApp, isAdmin, isOrgAdmin } from '../../contexts/AppContext';
 
 export function Sidebar() {
   const location = useLocation();
   const { state } = useApp();
   
-  const navigation = state.isAdmin ? adminNavigation : userNavigation;
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  // Base navigation items for all users
+  const baseNavigation = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+    { name: 'Projects', href: '/projects', icon: FolderOpen },
+    { name: 'Courses', href: '/courses', icon: GraduationCap },
+    { name: 'Videos', href: '/videos', icon: Video },
+    { name: 'Billy Chat', href: '/chat', icon: MessageSquare },
+    { name: 'Knowledge Plans', href: '/knowledge-transfer', icon: Brain },
+    { name: 'Avatars', href: '/avatars', icon: Users },
+    { name: 'Settings', href: '/settings', icon: Settings },
+  ];
+  
+  // Admin-only navigation items
+  const adminNavigation = [
+    { name: 'Organizations', href: '/organizations', icon: Building2, adminOnly: true },
+    { name: 'Users', href: '/users', icon: UserCog, adminOnly: true },
+    { name: 'Analytics', href: '/analytics', icon: BarChart3, adminOnly: true },
+  ];
+  
+  // Combine navigation based on user role
+  const navigation = [
+    ...baseNavigation,
+    ...(isAdmin(state.currentUser) ? adminNavigation : [])
+  ];
 
   return (
     <div className="w-64 bg-white shadow-sm border-r border-gray-200 flex flex-col">
@@ -50,13 +53,18 @@ export function Sidebar() {
           <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
             <Zap className="w-5 h-5 text-white" />
           </div>
-          <h1 className="text-xl font-bold text-gray-900">
-            {state.isAdmin && isAdminRoute ? 'Admin Panel' : 'Leaproad'}
-          </h1>
+          <h1 className="text-xl font-bold text-gray-900">Leaproad</h1>
         </div>
-        {state.isAdmin && (
-          <div className="mt-2 text-xs text-gray-500">
-            {isAdminRoute ? 'System Administration' : 'User Interface'}
+        {isAdmin(state.currentUser) && (
+          <div className="mt-2 flex items-center">
+            <Shield className="w-4 h-4 text-red-500 mr-1" />
+            <span className="text-xs text-gray-500">Admin Access</span>
+          </div>
+        )}
+        {isOrgAdmin(state.currentUser) && (
+          <div className="mt-2 flex items-center">
+            <Building2 className="w-4 h-4 text-purple-500 mr-1" />
+            <span className="text-xs text-gray-500">Organization Admin</span>
           </div>
         )}
       </div>
@@ -80,25 +88,28 @@ export function Sidebar() {
                 }`}
               />
               {item.name}
+              {item.adminOnly && (
+                <span className="ml-auto bg-red-100 text-red-800 text-xs px-1.5 py-0.5 rounded">
+                  Admin
+                </span>
+              )}
             </Link>
           );
         })}
       </nav>
 
-      {/* Admin Toggle */}
-      {state.isAdmin && (
-        <div className="p-4 border-t border-gray-200">
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">Admin Mode</span>
-            <Link
-              to={isAdminRoute ? '/' : '/admin'}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              {isAdminRoute ? 'User View' : 'Admin View'}
-            </Link>
+      {/* User Info */}
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <Users className="w-4 h-4 text-white" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-900">{state.currentUser.firstName} {state.currentUser.lastName}</p>
+            <p className="text-xs text-gray-500">{state.currentUser.email}</p>
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -10,11 +10,49 @@ const initialState = {
   activeTasks: {},
   videos: [], // Add videos to initial state
   // User & Admin State
-  currentUser: null,
+  currentUser: {
+    id: '1',
+    email: 'john@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    role: {
+      type: 'admin', // Can be 'admin', 'org_admin', 'user'
+      permissions: [
+        { resource: 'users', actions: ['create', 'read', 'update', 'delete'] },
+        { resource: 'projects', actions: ['create', 'read', 'update', 'delete'] },
+        { resource: 'organizations', actions: ['create', 'read', 'update', 'delete'] },
+        { resource: 'analytics', actions: ['read'] },
+        { resource: 'system', actions: ['read', 'update'] },
+      ]
+    },
+    organizationId: '1',
+    isActive: true,
+    lastLoginAt: new Date(),
+    createdAt: new Date('2024-01-15'),
+    updatedAt: new Date('2024-01-20'),
+    preferences: {
+      theme: 'light',
+      language: 'en',
+      timezone: 'America/New_York',
+      notifications: {
+        email: true,
+        push: true,
+        projectUpdates: true,
+        courseGeneration: true,
+      }
+    },
+    usage: {
+      projectsCreated: 12,
+      coursesGenerated: 34,
+      mediaAssetsUploaded: 156,
+      billySessionsCount: 89,
+      storageUsedMB: 2340,
+      lastActivityAt: new Date(),
+    }
+  },
   users: [],
   organizations: [],
   adminStats: null,
-  isAdmin: false,
   // Knowledge Gather Plans State
   knowledgeGatherPlans: [],
   knowledgeGatherEnrollments: [],
@@ -132,8 +170,6 @@ function appReducer(state, action) {
       };
     case 'SET_ADMIN_STATS':
       return { ...state, adminStats: action.payload };
-    case 'SET_IS_ADMIN':
-      return { ...state, isAdmin: action.payload };
     // Knowledge Gather Plans Cases
     case 'SET_KNOWLEDGE_GATHER_PLANS':
       return { ...state, knowledgeGatherPlans: action.payload };
@@ -183,4 +219,24 @@ export function useApp() {
     throw new Error('useApp must be used within an AppProvider');
   }
   return context;
+}
+
+// Utility function to check if user has permission
+export function hasPermission(user, resource, action) {
+  if (!user || !user.role || !user.role.permissions) return false;
+  
+  const permission = user.role.permissions.find(p => p.resource === resource);
+  if (!permission) return false;
+  
+  return permission.actions.includes(action);
+}
+
+// Utility function to check if user is admin
+export function isAdmin(user) {
+  return user?.role?.type === 'admin';
+}
+
+// Utility function to check if user is org admin
+export function isOrgAdmin(user) {
+  return user?.role?.type === 'org_admin';
 }
