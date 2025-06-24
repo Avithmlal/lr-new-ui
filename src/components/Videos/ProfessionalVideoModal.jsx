@@ -1,42 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  X, 
-  Video, 
-  Mic, 
-  FileText, 
-  Image, 
-  Upload, 
-  Play, 
-  Pause, 
-  RotateCcw,
-  Download,
-  Settings,
-  Wand2,
-  ChevronRight,
-  ChevronLeft,
-  Eye,
-  Volume2,
-  VolumeX,
-  Sliders,
-  Layers,
-  Film,
-  Sparkles,
-  CheckCircle,
-  AlertCircle,
-  Clock,
-  Zap,
-  Monitor,
-  User,
-  Headphones,
-  PresentationChart,
-  VideoIcon,
-  Camera,
-  Loader,
-  Save,
-  RefreshCw,
-  SkipForward,
-  FastForward
-} from 'lucide-react';
+import { X, Video, Mic, FileText, Image, Upload, Play, Pause, RotateCcw, Download, Settings, Wand2, ChevronRight, ChevronLeft, Eye, Volume2, VolumeX, Sliders, Layers, Film, Sparkles, CheckCircle, AlertCircle, Clock, Zap, Monitor, User, Headphones, Presentation as PresentationChart, VideoIcon, Camera, Loader, Save, RefreshCw, SkipForward, FastForward } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
 const HEYGEN_AVATARS = [
