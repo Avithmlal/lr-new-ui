@@ -7,6 +7,7 @@ import { Projects } from './pages/Projects';
 import { ProjectDetail } from './pages/ProjectDetail';
 import { Courses } from './pages/Courses';
 import { CourseDetail } from './pages/CourseDetail';
+import { Videos } from './pages/Videos';
 import { Chat } from './pages/Chat';
 import { Avatars } from './pages/Avatars';
 import { Settings } from './pages/Settings';
@@ -36,6 +37,7 @@ function App() {
             <Route path="projects/:projectId" element={<ProjectDetail />} />
             <Route path="courses" element={<Courses />} />
             <Route path="courses/:courseId" element={<CourseDetail />} />
+            <Route path="videos" element={<Videos />} />
             <Route path="chat" element={<Chat />} />
             <Route path="avatars" element={<Avatars />} />
             <Route path="settings" element={<Settings />} />

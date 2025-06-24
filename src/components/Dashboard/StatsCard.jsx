@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function StatsCard({ title, value, change, changeType, icon: Icon, color }) {
+export function StatsCard({ title, value, change, changeType, icon: Icon, color, onClick }) {
   const getChangeColor = () => {
     switch (changeType) {
       case 'positive': return 'text-emerald-600';
@@ -9,12 +9,21 @@ export function StatsCard({ title, value, change, changeType, icon: Icon, color 
     }
   };
 
+  const CardComponent = onClick ? 'button' : 'div';
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 group">
+    <CardComponent 
+      onClick={onClick}
+      className={`bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all duration-300 group ${
+        onClick ? 'cursor-pointer hover:border-blue-300' : ''
+      }`}
+    >
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+          <p className={`text-3xl font-bold text-gray-900 mb-2 transition-colors ${
+            onClick ? 'group-hover:text-blue-600' : ''
+          }`}>
             {value}
           </p>
           {change && (
@@ -29,6 +38,6 @@ export function StatsCard({ title, value, change, changeType, icon: Icon, color 
           <Icon className="w-7 h-7 text-white" />
         </div>
       </div>
-    </div>
+    </CardComponent>
   );
 }

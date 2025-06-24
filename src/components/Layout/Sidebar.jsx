@@ -12,7 +12,8 @@ import {
   Building2,
   BarChart3,
   UserCog,
-  Brain
+  Brain,
+  Video
 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
@@ -20,6 +21,7 @@ const userNavigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Projects', href: '/projects', icon: FolderOpen },
   { name: 'Courses', href: '/courses', icon: GraduationCap },
+  { name: 'Videos', href: '/videos', icon: Video },
   { name: 'Billy Chat', href: '/chat', icon: MessageSquare },
   { name: 'Knowledge Plans', href: '/knowledge-transfer', icon: Brain },
   { name: 'Avatars', href: '/avatars', icon: Users },

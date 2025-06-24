@@ -8,6 +8,7 @@ const initialState = {
   interactionLogs: [],
   systemMessages: [],
   activeTasks: {},
+  videos: [], // Add videos to initial state
   // User & Admin State
   currentUser: null,
   users: [],
@@ -79,6 +80,23 @@ function appReducer(state, action) {
           ...state.activeTasks,
           [action.payload.taskId]: action.payload.status,
         },
+      };
+    // Video cases
+    case 'SET_VIDEOS':
+      return { ...state, videos: action.payload };
+    case 'ADD_VIDEO':
+      return { ...state, videos: [...(state.videos || []), action.payload] };
+    case 'UPDATE_VIDEO':
+      return {
+        ...state,
+        videos: (state.videos || []).map(v => 
+          v.id === action.payload.id ? action.payload : v
+        ),
+      };
+    case 'DELETE_VIDEO':
+      return {
+        ...state,
+        videos: (state.videos || []).filter(v => v.id !== action.payload),
       };
     // User & Admin Cases
     case 'SET_CURRENT_USER':

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FolderOpen, GraduationCap, MessageSquare, Zap } from 'lucide-react';
+import { FolderOpen, GraduationCap, MessageSquare, Zap, Video } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StatsCard } from '../components/Dashboard/StatsCard';
 import { RecentActivity } from '../components/Dashboard/RecentActivity';
@@ -59,6 +59,7 @@ export function Dashboard() {
   const totalProjects = state.projects.length;
   const totalCourses = state.projects.reduce((acc, project) => acc + project.courses.length, 0);
   const totalAssets = state.projects.reduce((acc, project) => acc + project.mediaAssets.length, 0);
+  const totalVideos = state.videos?.length || 0;
 
   const handleQuickAction = (action) => {
     markStepCompleted(`quick_action_${action}`);
@@ -72,7 +73,14 @@ export function Dashboard() {
       case 'generate_course':
         navigate('/courses');
         break;
+      case 'create_video':
+        navigate('/videos');
+        break;
     }
+  };
+
+  const handleStatsCardClick = (section) => {
+    navigate(`/${section}`);
   };
 
   return (
@@ -96,6 +104,7 @@ export function Dashboard() {
               changeType="positive"
               icon={FolderOpen}
               color="bg-blue-500"
+              onClick={() => handleStatsCardClick('projects')}
             />
           </div>
         </HintTooltip>
@@ -109,6 +118,21 @@ export function Dashboard() {
               changeType="positive"
               icon={GraduationCap}
               color="bg-green-500"
+              onClick={() => handleStatsCardClick('courses')}
+            />
+          </div>
+        </HintTooltip>
+
+        <HintTooltip hint="AI-generated videos from your project content using avatars" position="bottom">
+          <div>
+            <StatsCard
+              title="Videos Generated"
+              value={totalVideos}
+              change="+3 this week"
+              changeType="positive"
+              icon={Video}
+              color="bg-purple-500"
+              onClick={() => handleStatsCardClick('videos')}
             />
           </div>
         </HintTooltip>
@@ -121,19 +145,6 @@ export function Dashboard() {
               change="+5 this week"
               changeType="positive"
               icon={Zap}
-              color="bg-purple-500"
-            />
-          </div>
-        </HintTooltip>
-        
-        <HintTooltip hint="Interactive conversations with Billy AI for knowledge capture" position="bottom">
-          <div>
-            <StatsCard
-              title="Billy Sessions"
-              value={12}
-              change="+3 this week"
-              changeType="positive"
-              icon={MessageSquare}
               color="bg-orange-500"
             />
           </div>
@@ -195,6 +206,23 @@ export function Dashboard() {
                   <div>
                     <p className="font-medium text-gray-900">Generate Course</p>
                     <p className="text-sm text-gray-600">Turn your content into a structured course</p>
+                  </div>
+                </div>
+              </button>
+            </HintTooltip>
+
+            <HintTooltip hint="Create AI-generated videos from your project content" position="left">
+              <button 
+                onClick={() => handleQuickAction('create_video')}
+                className="w-full text-left p-3 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all duration-200"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <Video className="w-4 h-4 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Create Video</p>
+                    <p className="text-sm text-gray-600">Generate AI videos with avatars</p>
                   </div>
                 </div>
               </button>
