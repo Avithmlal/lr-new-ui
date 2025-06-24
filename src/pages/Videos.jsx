@@ -180,6 +180,7 @@ export function Videos() {
     switch (type) {
       case 'basic': return 'bg-purple-100 text-purple-800';
       case 'template': return 'bg-orange-100 text-orange-800';
+      case 'professional': return 'bg-blue-100 text-blue-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -318,7 +319,7 @@ export function Videos() {
                 {video.title}
               </h3>
               <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ml-2 flex-shrink-0 ${getTypeColor(video.type)}`}>
-                {video.type === 'basic' ? 'Basic' : 'Template'}
+                {video.type === 'basic' ? 'Basic' : video.type === 'template' ? 'Template' : 'Pro'}
               </span>
             </div>
 
@@ -434,7 +435,7 @@ export function Videos() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTypeColor(video.type)}`}>
-                    {video.type === 'basic' ? 'Basic' : 'Template'}
+                    {video.type === 'basic' ? 'Basic' : video.type === 'template' ? 'Template' : 'Pro'}
                   </span>
                   <div className="text-xs text-gray-500 mt-1">
                     {video.metadata.resolution} • {video.metadata.style}
@@ -547,6 +548,7 @@ export function Videos() {
             <option value="all">All Types</option>
             <option value="basic">Basic</option>
             <option value="template">Template Based</option>
+            <option value="professional">Professional</option>
           </select>
 
           <div className="flex items-center space-x-2">

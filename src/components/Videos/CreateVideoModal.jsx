@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { X, Video, Wand2, FileText, Sparkles, Play, Settings } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
+import { ProfessionalVideoModal } from './ProfessionalVideoModal';
 
 export function CreateVideoModal({ isOpen, onClose }) {
   const { state, dispatch } = useApp();
   const [currentStep, setCurrentStep] = useState(1);
+  const [showProfessionalModal, setShowProfessionalModal] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -44,6 +46,20 @@ export function CreateVideoModal({ isOpen, onClose }) {
         'Interactive elements'
       ],
       estimatedTime: '15-25 minutes'
+    },
+    {
+      id: 'professional',
+      name: 'Professional AI Video',
+      description: 'Advanced video creation with AI avatars, voice synthesis, and media synchronization.',
+      icon: Wand2,
+      features: [
+        'AI avatar presenters',
+        'Voice synthesis',
+        'Media synchronization',
+        'Professional quality'
+      ],
+      estimatedTime: '20-40 minutes',
+      isPremium: true
     }
   ];
 
@@ -73,6 +89,11 @@ export function CreateVideoModal({ isOpen, onClose }) {
       createdAt: new Date(),
       updatedAt: new Date(),
       views: 0,
+      creator: {
+        name: 'Current User',
+        email: 'user@example.com',
+        avatar: availableAvatars.find(a => a.id === formData.avatar)?.name || 'Unknown Avatar'
+      },
       metadata: {
         resolution: formData.resolution,
         format: 'mp4',
@@ -127,7 +148,7 @@ export function CreateVideoModal({ isOpen, onClose }) {
           isRead: false,
         }
       });
-    }, 8000); // 8 seconds for demo
+    }, 8000); //
 
     // Reset form and close modal
     setFormData({
@@ -163,7 +184,24 @@ export function CreateVideoModal({ isOpen, onClose }) {
     onClose();
   };
 
+  const handleTypeSelect = (type) => {
+    if (type === 'professional') {
+      setShowProfessionalModal(true);
+      onClose();
+      return;
+    }
+    
+    setFormData(prev => ({ ...prev, type }));
+  };
+
   if (!isOpen) return null;
+
+  if (showProfessionalModal) {
+    return <ProfessionalVideoModal isOpen={true} onClose={() => {
+      setShowProfessionalModal(false);
+      onClose();
+    }} />;
+  }
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -222,17 +260,24 @@ export function CreateVideoModal({ isOpen, onClose }) {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose Video Type</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {videoTypes.map((type) => (
                   <div
                     key={type.id}
-                    onClick={() => setFormData(prev => ({ ...prev, type: type.id }))}
+                    onClick={() => handleTypeSelect(type.id)}
                     className={`p-6 border-2 rounded-xl cursor-pointer transition-all duration-200 ${
                       formData.type === type.id
                         ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                    }`}
+                    } ${type.isPremium ? 'relative overflow-hidden' : ''}`}
                   >
+                    {type.isPremium && (
+                      <div className="absolute top-0 right-0">
+                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs px-3 py-1 transform rotate-45 translate-x-2 -translate-y-1 shadow-md">
+                          Premium
+                        </div>
+                      </div>
+                    )}
                     <div className="flex items-center mb-4">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${
                         formData.type === type.id ? 'bg-blue-100' : 'bg-gray-100'
