@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FolderOpen, GraduationCap, MessageSquare, Zap, Video, Building2, Users, BarChart3, DollarSign } from 'lucide-react';
+import { FolderOpen, GraduationCap, MessageSquare, Zap, Video, Building2, Users, BarChart3, DollarSign, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StatsCard } from '../components/Dashboard/StatsCard';
 import { RecentActivity } from '../components/Dashboard/RecentActivity';
