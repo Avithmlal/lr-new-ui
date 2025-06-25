@@ -9,6 +9,7 @@ import { ProjectDetail } from './pages/ProjectDetail';
 import { Courses } from './pages/Courses';
 import { CourseDetail } from './pages/CourseDetail';
 import { Videos } from './pages/Videos';
+import { VideoEditorPage } from './components/Videos/VideoEditorPage';
 import { Chat } from './pages/Chat';
 import { Avatars } from './pages/Avatars';
 import { Settings } from './pages/Settings';
@@ -84,6 +85,9 @@ function App() {
               <Route path="users/:userId" element={<UserDetail />} />
               <Route path="analytics" element={<Analytics />} />
             </Route>
+            
+            {/* Video Editor Page - Full screen outside of main layout */}
+            <Route path="videos/editor/:videoId" element={<VideoEditorPage />} />
           </Routes>
         </Router>
       {/* </AuthProvider> */}

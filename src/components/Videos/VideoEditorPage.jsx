@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { X, Settings, FileText, Mic, Video as VideoIcon, Play, Pause, RotateCcw, Download, ChevronRight, ChevronLeft, Eye, Volume2, VolumeX, Sliders, Layers, Film, Sparkles, CheckCircle, AlertCircle, Clock as ClockIcon, Zap, Monitor, User, Headphones, Presentation as PresentationChart, Video, Camera, Loader, Save, FastForward, SkipForward, Upload, Wand2, ArrowLeft } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 
 // Avatar data for Heygen and Akool
@@ -32,14 +32,16 @@ const AKOOL_VOICES = [
   { id: 'akool-voice-4', name: 'Persuasive Male', provider: 'Akool', gender: 'Male', accent: 'Australian', tone: 'Persuasive' },
 ];
 
-export function VideoEditorPage({ videoData }) {
-  const navigate = useNavigate();
+export function VideoEditorPage() {
+  const { videoId } = useParams();
   const { state, dispatch } = useApp();
+  const navigate = useNavigate();
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [videoModel, setVideoModel] = useState('heygen'); // 'heygen' or 'akool'
   const [videoInfo, setVideoInfo] = useState({
-    name: videoData?.name || '',
-    projectId: videoData?.projectId || '',
+    name: '',
+    projectId: '',
     videoAvatar: '',
     audioAvatar: '',
     script: '',
@@ -52,9 +54,36 @@ export function VideoEditorPage({ videoData }) {
     },
     compilationProgress: 0,
     isGenerating: false,
-    pptFile: null,
     pptSlides: []
   });
+
+  // Find the video in state
+  useEffect(() => {
+    if (videoId) {
+      const video = state.videos.find(v => v.id === videoId);
+      if (video) {
+        setVideoInfo(prev => ({
+          ...prev,
+          name: video.title,
+          projectId: video.projectId
+        }));
+      } else {
+        // Video not found, redirect to videos page
+        navigate('/videos');
+        dispatch({
+          type: 'ADD_SYSTEM_MESSAGE',
+          payload: {
+            id: Date.now().toString(),
+            type: 'error',
+            title: 'Video Not Found',
+            message: 'The requested video could not be found.',
+            timestamp: new Date(),
+            isRead: false,
+          }
+        });
+      }
+    }
+  }, [videoId, state.videos, navigate, dispatch]);
 
   const scriptEditorRef = useRef(null);
   const [selectedText, setSelectedText] = useState('');
@@ -65,7 +94,7 @@ export function VideoEditorPage({ videoData }) {
   const [currentPlayingSegment, setCurrentPlayingSegment] = useState(null);
   const [highlightedRanges, setHighlightedRanges] = useState([]);
   const [hoveredRange, setHoveredRange] = useState(null);
-  const fileInputRef = useRef(null);
+  const [showPptUploadModal, setShowPptUploadModal] = useState(false);
 
   // Auto-split script into segments
   useEffect(() => {
@@ -96,14 +125,16 @@ export function VideoEditorPage({ videoData }) {
     if (text.length > 0) {
       setSelectedText(text);
       
-      // Get the range information for positioning the tooltip
+      // Get the range information for highlighting
       const range = selection.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
       
-      // Position the tooltip above the selection
+      // Calculate position for the tooltip
+      const rect = range.getBoundingClientRect();
+      const editorRect = scriptEditorRef.current.getBoundingClientRect();
+      
       setMediaTooltipPosition({
-        x: rect.left + rect.width / 2,
-        y: rect.top - 10
+        x: rect.left + rect.width / 2 - editorRect.left,
+        y: rect.top - editorRect.top - 40 // Position above the selected text
       });
       
       setShowMediaTooltip(true);
@@ -150,22 +181,19 @@ export function VideoEditorPage({ videoData }) {
     }
   };
 
-  const handlePPTUpload = (e) => {
-    const file = e.target.files[0];
+  const handleUploadPpt = (e) => {
+    const file = e.target.files?.[0];
     if (file) {
-      // In a real app, we would process the PPT file here
-      // For now, we'll simulate having slides
-      const mockSlides = Array.from({ length: 10 }, (_, i) => ({
-        id: i + 1,
-        title: `Slide ${i + 1}`,
-        thumbnail: `https://via.placeholder.com/100x75?text=Slide+${i + 1}`
-      }));
+      // Simulate PPT upload and slide extraction
+      const mockSlides = [
+        { id: 1, title: 'Slide 1: Introduction', thumbnail: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=150' },
+        { id: 2, title: 'Slide 2: Key Points', thumbnail: 'https://images.pexels.com/photos/4164418/pexels-photo-4164418.jpeg?auto=compress&cs=tinysrgb&w=150' },
+        { id: 3, title: 'Slide 3: Data Analysis', thumbnail: 'https://images.pexels.com/photos/4348404/pexels-photo-4348404.jpeg?auto=compress&cs=tinysrgb&w=150' },
+        { id: 4, title: 'Slide 4: Results', thumbnail: 'https://images.pexels.com/photos/3785077/pexels-photo-3785077.jpeg?auto=compress&cs=tinysrgb&w=150' },
+        { id: 5, title: 'Slide 5: Conclusion', thumbnail: 'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&cs=tinysrgb&w=150' },
+      ];
       
-      setVideoInfo(prev => ({
-        ...prev,
-        pptFile: file,
-        pptSlides: mockSlides
-      }));
+      setVideoInfo(prev => ({ ...prev, pptSlides: mockSlides }));
       
       dispatch({
         type: 'ADD_SYSTEM_MESSAGE',
@@ -173,7 +201,7 @@ export function VideoEditorPage({ videoData }) {
           id: Date.now().toString(),
           type: 'success',
           title: 'PowerPoint Uploaded',
-          message: `"${file.name}" has been uploaded with ${mockSlides.length} slides.`,
+          message: `Successfully extracted ${mockSlides.length} slides from "${file.name}"`,
           timestamp: new Date(),
           isRead: false,
         }
@@ -181,7 +209,7 @@ export function VideoEditorPage({ videoData }) {
     }
   };
 
-  const assignPPTSlide = (slideId) => {
+  const assignSlide = (slideId) => {
     if (selectedText) {
       const slide = videoInfo.pptSlides.find(s => s.id === slideId);
       if (slide) {
@@ -244,7 +272,7 @@ export function VideoEditorPage({ videoData }) {
     
     // Create final video
     const finalVideo = {
-      id: Date.now().toString(),
+      id: videoId || Date.now().toString(),
       title: videoInfo.name,
       description: 'Professional AI-generated video with avatar and voice synthesis',
       type: 'professional',
@@ -253,7 +281,7 @@ export function VideoEditorPage({ videoData }) {
         ? state.projects.find(p => p.id === videoInfo.projectId)?.title 
         : state.projects[0]?.title || 'Professional Videos',
       status: 'completed',
-      duration: videoInfo.audioSegments.reduce((acc, seg) => acc + seg.duration, 0),
+      duration: videoInfo.audioSegments.reduce((acc, seg) => acc + (seg.duration || 0), 0),
       thumbnailUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
       videoUrl: '#professional-video',
       createdAt: new Date(),
@@ -279,7 +307,12 @@ export function VideoEditorPage({ videoData }) {
       }
     };
     
-    dispatch({ type: 'ADD_VIDEO', payload: finalVideo });
+    // Update or add the video
+    if (videoId) {
+      dispatch({ type: 'UPDATE_VIDEO', payload: finalVideo });
+    } else {
+      dispatch({ type: 'ADD_VIDEO', payload: finalVideo });
+    }
     
     dispatch({
       type: 'ADD_SYSTEM_MESSAGE',
@@ -362,7 +395,7 @@ export function VideoEditorPage({ videoData }) {
     }
   };
 
-  // Get the selected avatar and voice information
+  // Get selected avatar and voice info
   const selectedAvatar = videoInfo.videoAvatar 
     ? [...HEYGEN_AVATARS, ...AKOOL_AVATARS].find(a => a.id === videoInfo.videoAvatar)
     : null;
@@ -374,104 +407,88 @@ export function VideoEditorPage({ videoData }) {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/videos')}
-              className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">{videoInfo.name || 'New Video'}</h1>
-              <p className="text-sm text-gray-600">
-                {currentStep === 1 ? 'Select AI Model' : 
-                 currentStep === 2 ? 'Choose Avatar & Voice' : 
-                 currentStep === 3 ? 'Script Editor' : 
-                 currentStep === 4 ? 'Audio Generation' : 
-                 'Video Compilation'}
-              </p>
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => navigate('/videos')}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">{videoInfo.name || 'New Video'}</h1>
+                <p className="text-sm text-gray-600">
+                  {currentStep === 1 ? 'Select AI Model' : 
+                   currentStep === 2 ? 'Choose Avatar & Voice' :
+                   currentStep === 3 ? 'Script Editor' :
+                   currentStep === 4 ? 'Audio Generation' :
+                   'Video Compilation'}
+                </p>
+              </div>
+            </div>
+            
+            {/* Selected Avatar & Voice */}
+            {(selectedAvatar || selectedVoice) && (
+              <div className="flex items-center space-x-4">
+                {selectedAvatar && (
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full overflow-hidden">
+                      <img 
+                        src={selectedAvatar.thumbnail} 
+                        alt={selectedAvatar.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <span className="text-sm font-medium text-gray-700">{selectedAvatar.name}</span>
+                  </div>
+                )}
+                
+                {selectedVoice && (
+                  <div className="flex items-center space-x-2 bg-gray-100 px-3 py-1 rounded-full">
+                    <Volume2 className="w-3 h-3 text-gray-600" />
+                    <span className="text-xs font-medium text-gray-700">{selectedVoice.name}</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Steps */}
+            <div className="hidden md:flex items-center space-x-1">
+              {[1, 2, 3, 4, 5].map(step => (
+                <div 
+                  key={step}
+                  className={`flex items-center ${step < 5 ? 'mr-2' : ''}`}
+                >
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${
+                    step === currentStep 
+                      ? 'bg-blue-600 text-white' 
+                      : step < currentStep 
+                      ? 'bg-green-600 text-white' 
+                      : 'bg-gray-200 text-gray-600'
+                  }`}>
+                    {step < currentStep ? <CheckCircle className="w-3 h-3" /> : step}
+                  </div>
+                  {step < 5 && (
+                    <div className={`w-8 h-0.5 ${
+                      step < currentStep ? 'bg-green-600' : 'bg-gray-200'
+                    }`}></div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
-          
-          {/* Selected Avatar & Voice Preview */}
-          {(selectedAvatar || selectedVoice) && (
-            <div className="flex items-center space-x-4">
-              {selectedAvatar && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full overflow-hidden">
-                    <img 
-                      src={selectedAvatar.thumbnail} 
-                      alt={selectedAvatar.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-medium text-gray-900">{selectedAvatar.name}</p>
-                    <p className="text-xs text-gray-500">{selectedAvatar.provider}</p>
-                  </div>
-                </div>
-              )}
-              
-              {selectedVoice && (
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                    <Volume2 className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div className="text-sm">
-                    <p className="font-medium text-gray-900">{selectedVoice.name}</p>
-                    <p className="text-xs text-gray-500">{selectedVoice.provider}</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Progress Steps */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4">
-        <div className="flex items-center justify-between">
-          {[
-            { step: 1, label: 'Model', icon: Settings },
-            { step: 2, label: 'Avatar', icon: User },
-            { step: 3, label: 'Script', icon: FileText },
-            { step: 4, label: 'Audio', icon: Mic },
-            { step: 5, label: 'Compile', icon: VideoIcon }
-          ].map(({ step, label, icon: Icon }) => (
-            <div key={step} className="flex items-center">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                step <= currentStep
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
-                <Icon className="w-4 h-4" />
-              </div>
-              {step < 5 && (
-                <div className={`w-16 h-1 mx-2 ${
-                  step < currentStep ? 'bg-blue-600' : 'bg-gray-200'
-                }`}></div>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex justify-between mt-2 text-xs text-gray-600">
-          <span>AI Model</span>
-          <span>Avatar & Voice</span>
-          <span>Script Editor</span>
-          <span>Audio Generation</span>
-          <span>Video Compilation</span>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-6 py-8">
+      <div className="container mx-auto px-4 py-6">
         {currentStep === 1 && (
-          <div className="space-y-6 max-w-4xl mx-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Select AI Model</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Select AI Model</h3>
             
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div
                 onClick={() => setVideoModel('heygen')}
                 className={`p-6 border-2 rounded-xl cursor-pointer transition-all ${
@@ -545,7 +562,7 @@ export function VideoEditorPage({ videoData }) {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4">
+            <div className="flex justify-end space-x-3 mt-8">
               <button
                 onClick={() => navigate('/videos')}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -563,22 +580,22 @@ export function VideoEditorPage({ videoData }) {
         )}
 
         {currentStep === 2 && (
-          <div className="space-y-6 max-w-4xl mx-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Select Avatar and Voice</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Select Avatar and Voice</h3>
             
             {/* Video Avatar Selection */}
-            <div>
-              <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+            <div className="mb-8">
+              <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
                 <VideoIcon className="w-5 h-5 mr-2 text-blue-600" />
                 Choose Video Avatar
               </h4>
               
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(videoModel === 'heygen' ? HEYGEN_AVATARS : AKOOL_AVATARS).map((avatar) => (
                   <div
                     key={avatar.id}
                     onClick={() => setVideoInfo(prev => ({ ...prev, videoAvatar: avatar.id }))}
-                    className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       videoInfo.videoAvatar === avatar.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
@@ -587,11 +604,12 @@ export function VideoEditorPage({ videoData }) {
                     <img
                       src={avatar.thumbnail}
                       alt={avatar.name}
-                      className="w-16 h-16 rounded-full object-cover mr-3"
+                      className="w-16 h-16 rounded-full object-cover mr-4"
                     />
                     <div>
                       <p className="font-medium text-gray-900">{avatar.name}</p>
                       <p className="text-sm text-gray-600">{avatar.style}</p>
+                      <p className="text-xs text-gray-500 mt-1">{avatar.gender} • {avatar.provider}</p>
                     </div>
                   </div>
                 ))}
@@ -600,17 +618,17 @@ export function VideoEditorPage({ videoData }) {
 
             {/* Audio Avatar Selection */}
             <div>
-              <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
+              <h4 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
                 <Headphones className="w-5 h-5 mr-2 text-green-600" />
                 Choose Audio Voice
               </h4>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(videoModel === 'heygen' ? HEYGEN_VOICES : AKOOL_VOICES).map((voice) => (
                   <div
                     key={voice.id}
                     onClick={() => setVideoInfo(prev => ({ ...prev, audioAvatar: voice.id }))}
-                    className={`p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       videoInfo.audioAvatar === voice.id
                         ? 'border-green-500 bg-green-50'
                         : 'border-gray-200 hover:border-gray-300'
@@ -620,15 +638,16 @@ export function VideoEditorPage({ videoData }) {
                       <div>
                         <p className="font-medium text-gray-900">{voice.name}</p>
                         <p className="text-sm text-gray-600">{voice.accent} • {voice.tone}</p>
+                        <p className="text-xs text-gray-500 mt-1">{voice.gender} • {voice.provider}</p>
                       </div>
-                      <Volume2 className="w-4 h-4 text-gray-400" />
+                      <Volume2 className="w-5 h-5 text-gray-400" />
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="flex justify-between space-x-3 pt-4">
+            <div className="flex justify-between space-x-3 mt-8">
               <button
                 onClick={() => setCurrentStep(1)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -655,158 +674,194 @@ export function VideoEditorPage({ videoData }) {
         )}
 
         {currentStep === 3 && (
-          <div className="space-y-6 max-w-5xl mx-auto">
-            <div className="flex items-center justify-between">
+          <div className="bg-white rounded-xl shadow-sm p-6 max-w-6xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-semibold text-gray-900">Script Editor</h3>
               
               {/* PPT Upload Button */}
-              <div className="flex items-center space-x-3">
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload PowerPoint
-                </button>
-                <input 
+              <div>
+                <input
                   type="file"
-                  ref={fileInputRef}
-                  onChange={handlePPTUpload}
+                  id="ppt-upload"
                   accept=".ppt,.pptx"
                   className="hidden"
+                  onChange={handleUploadPpt}
                 />
+                <label
+                  htmlFor="ppt-upload"
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+                >
+                  <PresentationChart className="w-4 h-4 mr-2" />
+                  Upload PowerPoint
+                </label>
               </div>
             </div>
             
-            <div className="grid grid-cols-3 gap-6">
-              {/* Script Editor - Takes 2/3 of the space */}
-              <div className="col-span-2 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Video Script</label>
-                  <div className="relative">
-                    <textarea
-                      ref={scriptEditorRef}
-                      value={videoInfo.script}
-                      onChange={(e) => setVideoInfo(prev => ({ ...prev, script: e.target.value }))}
-                      onMouseUp={handleTextSelection}
-                      rows={20}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                      placeholder="Type or paste your script here. Highlight text to assign media..."
-                    />
-                    
-                    {/* Overlay for highlighted text */}
-                    {videoInfo.script && highlightedRanges.length > 0 && (
-                      <div className="absolute inset-0 pointer-events-none px-4 py-3 font-mono text-sm">
-                        <div className="relative">
-                          {renderHighlightedScript()}
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Script Editor - 2/3 width */}
+              <div className="md:w-2/3">
+                <div className="relative">
+                  <textarea
+                    ref={scriptEditorRef}
+                    value={videoInfo.script}
+                    onChange={(e) => setVideoInfo(prev => ({ ...prev, script: e.target.value }))}
+                    onMouseUp={handleTextSelection}
+                    rows={20}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                    placeholder="Type or paste your script here. Highlight text to assign media..."
+                  />
+                  
+                  {/* Overlay for highlighted text */}
+                  {videoInfo.script && highlightedRanges.length > 0 && (
+                    <div className="absolute inset-0 pointer-events-none px-4 py-3 font-mono text-sm">
+                      <div className="relative">
+                        {renderHighlightedScript()}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Media Assignment Tooltip */}
+                  {showMediaTooltip && selectedText && (
+                    <div 
+                      className="absolute bg-white border border-gray-200 rounded-lg shadow-lg p-2 z-10"
+                      style={{ 
+                        left: `${mediaTooltipPosition.x}px`, 
+                        top: `${mediaTooltipPosition.y}px`,
+                        transform: 'translateX(-50%)'
+                      }}
+                    >
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => assignMedia('slide', 'PowerPoint slide')}
+                          className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                          title="Assign PowerPoint Slide"
+                        >
+                          <PresentationChart className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => assignMedia('stock-video', 'Stock video footage')}
+                          className="p-2 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                          title="Assign Stock Video"
+                        >
+                          <VideoIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => assignMedia('upload', 'Custom upload')}
+                          className="p-2 bg-green-100 text-green-700 rounded hover:bg-green-200"
+                          title="Upload Custom Media"
+                        >
+                          <Upload className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  Highlight text to assign media elements. Assigned sections will be highlighted.
+                </p>
+                
+                {/* Media Assignments Summary */}
+                {videoInfo.mediaAssignments.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-md font-semibold text-gray-900 mb-3">Media Assignments</h4>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-900">Total Assignments</span>
+                        <span className="text-sm font-medium text-gray-900">{videoInfo.mediaAssignments.length}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="flex items-center space-x-1 text-xs text-gray-600">
+                          <div className="w-3 h-3 bg-blue-100 rounded-full"></div>
+                          <span>Slides: {videoInfo.mediaAssignments.filter(a => a.type === 'slide').length}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-xs text-gray-600">
+                          <div className="w-3 h-3 bg-purple-100 rounded-full"></div>
+                          <span>Videos: {videoInfo.mediaAssignments.filter(a => a.type === 'stock-video').length}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-xs text-gray-600">
+                          <div className="w-3 h-3 bg-green-100 rounded-full"></div>
+                          <span>Uploads: {videoInfo.mediaAssignments.filter(a => a.type === 'upload').length}</span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Highlight text to assign media elements. Assigned sections will be highlighted.
-                  </p>
-                </div>
-
-                {/* Media Assignment Tooltip */}
-                {showMediaTooltip && selectedText && (
-                  <div 
-                    className="fixed z-50 bg-white rounded-lg shadow-lg border border-gray-200 p-2"
-                    style={{
-                      left: `${mediaTooltipPosition.x}px`,
-                      top: `${mediaTooltipPosition.y}px`,
-                      transform: 'translate(-50%, -100%)'
-                    }}
-                  >
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => assignMedia('slide', 'PowerPoint slide')}
-                        className="p-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
-                        title="Assign PowerPoint Slide"
-                      >
-                        <PresentationChart className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => assignMedia('stock-video', 'Stock video footage')}
-                        className="p-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200"
-                        title="Assign Stock Video"
-                      >
-                        <VideoIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => assignMedia('upload', 'Custom upload')}
-                        className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
-                        title="Upload Custom Media"
-                      >
-                        <Upload className="w-4 h-4" />
-                      </button>
                     </div>
                   </div>
                 )}
               </div>
-
-              {/* Right Sidebar - Takes 1/3 of the space */}
-              <div className="space-y-4">
+              
+              {/* Right Sidebar - 1/3 width */}
+              <div className="md:w-1/3">
                 {/* PPT Slides Panel */}
-                {videoInfo.pptSlides.length > 0 && (
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-medium text-gray-900 mb-3">PowerPoint Slides</h4>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Highlight text in your script and click a slide to assign it.
-                    </p>
-                    <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                <div className="border border-gray-200 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-gray-900 mb-3">PowerPoint Slides</h4>
+                  
+                  {videoInfo.pptSlides.length === 0 ? (
+                    <div className="text-center py-6 bg-gray-50 rounded-lg">
+                      <PresentationChart className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">No PowerPoint uploaded</p>
+                      <p className="text-xs text-gray-500 mt-1">Upload a PPT to assign slides to your script</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
                       {videoInfo.pptSlides.map(slide => (
                         <div 
                           key={slide.id}
-                          onClick={() => assignPPTSlide(slide.id)}
-                          className={`border rounded-lg p-2 cursor-pointer hover:bg-blue-50 transition-colors ${
-                            selectedText ? 'border-blue-300' : 'border-gray-200'
-                          }`}
+                          onClick={() => assignSlide(slide.id)}
+                          className="flex items-center p-2 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition-all"
                         >
-                          <img 
-                            src={slide.thumbnail} 
-                            alt={slide.title}
-                            className="w-full h-16 object-cover rounded mb-1"
-                          />
-                          <p className="text-xs text-center truncate">{slide.title}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Media Assignments Summary */}
-                <div className="border border-gray-200 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Media Assignments</h4>
-                  {videoInfo.mediaAssignments.length === 0 ? (
-                    <p className="text-sm text-gray-600">
-                      No media assignments yet. Highlight text in your script to assign media.
-                    </p>
-                  ) : (
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {videoInfo.mediaAssignments.map(assignment => (
-                        <div 
-                          key={assignment.id}
-                          className={`p-2 rounded-lg ${getHighlightColor(assignment.type)} border border-gray-200`}
-                        >
-                          <p className="text-xs font-medium capitalize mb-1">{assignment.type.replace('-', ' ')}</p>
-                          <p className="text-xs truncate">{assignment.content}</p>
-                          <p className="text-xs italic mt-1 truncate">"{assignment.text}"</p>
+                          <div className="w-16 h-12 bg-gray-100 rounded overflow-hidden mr-3 flex-shrink-0">
+                            <img 
+                              src={slide.thumbnail} 
+                              alt={slide.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{slide.title}</p>
+                            <p className="text-xs text-gray-500">Click to assign to selected text</p>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
                 </div>
-
+                
+                {/* Media Assignment Instructions */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <h4 className="font-medium text-blue-900 mb-2">Media Assignment</h4>
+                  <p className="text-sm text-blue-800 mb-3">
+                    Highlight text in your script to assign media:
+                  </p>
+                  <ul className="space-y-2 text-sm text-blue-800">
+                    <li className="flex items-start">
+                      <div className="w-4 h-4 bg-blue-100 rounded flex items-center justify-center mr-2 mt-0.5">
+                        <PresentationChart className="w-2 h-2 text-blue-700" />
+                      </div>
+                      <span>Assign PowerPoint slides to specific parts of your script</span>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-4 h-4 bg-purple-100 rounded flex items-center justify-center mr-2 mt-0.5">
+                        <VideoIcon className="w-2 h-2 text-purple-700" />
+                      </div>
+                      <span>Add stock video footage for visual enhancement</span>
+                    </li>
+                    <li className="flex items-start">
+                      <div className="w-4 h-4 bg-green-100 rounded flex items-center justify-center mr-2 mt-0.5">
+                        <Upload className="w-2 h-2 text-green-700" />
+                      </div>
+                      <span>Upload custom media for specific sections</span>
+                    </li>
+                  </ul>
+                </div>
+                
                 {/* Script Segments Preview */}
                 {videoInfo.audioSegments.length > 0 && (
                   <div className="border border-gray-200 rounded-lg p-4">
                     <h4 className="font-medium text-gray-900 mb-3">
                       Script Segments ({videoInfo.audioSegments.length})
                     </h4>
-                    <div className="max-h-64 overflow-y-auto space-y-2">
-                      {videoInfo.audioSegments.slice(0, 5).map((segment) => (
-                        <div key={segment.id} className="p-2 bg-gray-50 rounded-lg">
+                    <div className="max-h-40 overflow-y-auto space-y-2">
+                      {videoInfo.audioSegments.slice(0, 3).map((segment) => (
+                        <div key={segment.id} className="p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center justify-between mb-1">
                             <span className="text-xs font-medium text-gray-700">Segment {segment.id}</span>
                             <span className="text-xs text-gray-500">~{Math.ceil(segment.text.length / 10)}s</span>
@@ -814,10 +869,10 @@ export function VideoEditorPage({ videoData }) {
                           <p className="text-xs text-gray-600 line-clamp-2">{segment.text}</p>
                         </div>
                       ))}
-                      {videoInfo.audioSegments.length > 5 && (
-                        <p className="text-xs text-center text-gray-500">
-                          +{videoInfo.audioSegments.length - 5} more segments
-                        </p>
+                      {videoInfo.audioSegments.length > 3 && (
+                        <div className="text-center text-xs text-blue-600 font-medium">
+                          +{videoInfo.audioSegments.length - 3} more segments
+                        </div>
                       )}
                     </div>
                   </div>
@@ -825,7 +880,7 @@ export function VideoEditorPage({ videoData }) {
               </div>
             </div>
 
-            <div className="flex justify-between space-x-3 pt-4">
+            <div className="flex justify-between space-x-3 mt-8">
               <button
                 onClick={() => setCurrentStep(2)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -852,13 +907,13 @@ export function VideoEditorPage({ videoData }) {
         )}
 
         {currentStep === 4 && (
-          <div className="space-y-6 max-w-4xl mx-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Audio Generation</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Audio Generation</h3>
             
             {/* Voice Settings */}
             <div className="bg-gray-50 rounded-lg p-4 mb-6">
               <h4 className="font-medium text-gray-900 mb-3">Voice Settings</h4>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Pitch</label>
                   <input
@@ -872,7 +927,11 @@ export function VideoEditorPage({ videoData }) {
                     }))}
                     className="w-full"
                   />
-                  <span className="text-xs text-gray-500">{videoInfo.voiceSettings.pitch}</span>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Lower</span>
+                    <span>{videoInfo.voiceSettings.pitch}</span>
+                    <span>Higher</span>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Speed</label>
@@ -888,7 +947,11 @@ export function VideoEditorPage({ videoData }) {
                     }))}
                     className="w-full"
                   />
-                  <span className="text-xs text-gray-500">{videoInfo.voiceSettings.speed}x</span>
+                  <div className="flex justify-between text-xs text-gray-500">
+                    <span>Slower</span>
+                    <span>{videoInfo.voiceSettings.speed}x</span>
+                    <span>Faster</span>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Tone</label>
@@ -915,7 +978,7 @@ export function VideoEditorPage({ videoData }) {
                 <h4 className="font-medium text-gray-900">Preview Phase</h4>
                 <button
                   onClick={generatePreviewAudio}
-                  disabled={isGeneratingAudio || audioPreviewSegments.length > 0}
+                  disabled={isGeneratingAudio || audioPreviewSegments.length > 0 || videoInfo.audioSegments.length === 0}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isGeneratingAudio ? (
@@ -932,7 +995,7 @@ export function VideoEditorPage({ videoData }) {
                 </button>
               </div>
 
-              {audioPreviewSegments.length > 0 && (
+              {audioPreviewSegments.length > 0 ? (
                 <div className="space-y-3">
                   {audioPreviewSegments.map((segment) => (
                     <div key={segment.id} className="flex items-center p-3 bg-blue-50 rounded-lg">
@@ -943,7 +1006,7 @@ export function VideoEditorPage({ videoData }) {
                       <div className="flex items-center space-x-2">
                         <span className="text-xs text-gray-500">{segment.duration}s</span>
                         <button
-                          onClick={() => setCurrentPlayingSegment(segment.id)}
+                          onClick={() => setCurrentPlayingSegment(segment.id === currentPlayingSegment ? null : segment.id)}
                           className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                         >
                           {currentPlayingSegment === segment.id ? (
@@ -958,6 +1021,12 @@ export function VideoEditorPage({ videoData }) {
                       </div>
                     </div>
                   ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-lg">
+                  <Wand2 className="w-10 h-10 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-600">Generate audio preview</p>
+                  <p className="text-xs text-gray-500 mt-1">Test your voice settings with the first few segments</p>
                 </div>
               )}
             </div>
@@ -994,7 +1063,7 @@ export function VideoEditorPage({ videoData }) {
               </div>
             )}
 
-            <div className="flex justify-between space-x-3 pt-4">
+            <div className="flex justify-between space-x-3 mt-8">
               <button
                 onClick={() => setCurrentStep(3)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
@@ -1021,15 +1090,15 @@ export function VideoEditorPage({ videoData }) {
         )}
 
         {currentStep === 5 && (
-          <div className="space-y-6 max-w-4xl mx-auto">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Video Compilation</h3>
+          <div className="bg-white rounded-xl shadow-sm p-6 max-w-4xl mx-auto">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Video Compilation</h3>
             
             {!videoInfo.isGenerating ? (
               <div className="space-y-6">
                 {/* Compilation Overview */}
                 <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg p-6">
                   <h4 className="font-medium text-blue-900 mb-3">Ready for Compilation</h4>
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                     <div className="bg-white rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Audio Segments</span>
@@ -1045,13 +1114,13 @@ export function VideoEditorPage({ videoData }) {
                     <div className="bg-white rounded-lg p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-600">Video Avatar</span>
-                        <span className="font-medium text-gray-900">{selectedAvatar?.name || 'Not Selected'}</span>
+                        <span className="font-medium text-gray-900">Selected</span>
                       </div>
                     </div>
                     <div className="bg-white rounded-lg p-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">Audio Voice</span>
-                        <span className="font-medium text-gray-900">{selectedVoice?.name || 'Not Selected'}</span>
+                        <span className="text-sm text-gray-600">Audio Avatar</span>
+                        <span className="font-medium text-gray-900">Selected</span>
                       </div>
                     </div>
                   </div>
@@ -1066,7 +1135,7 @@ export function VideoEditorPage({ videoData }) {
                 </div>
 
                 {/* Compilation Features */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-gray-200 rounded-lg p-4">
                     <h5 className="font-medium text-gray-900 mb-2">Automatic Synchronization</h5>
                     <ul className="text-sm text-gray-600 space-y-1">
@@ -1108,7 +1177,7 @@ export function VideoEditorPage({ videoData }) {
                   </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-4 gap-4 text-center">
+                <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
                   <div className={`p-3 rounded-lg ${videoInfo.compilationProgress >= 25 ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-500'}`}>
                     <CheckCircle className="w-6 h-6 mx-auto mb-1" />
                     <span className="text-xs">Audio Sync</span>
@@ -1129,7 +1198,7 @@ export function VideoEditorPage({ videoData }) {
               </div>
             )}
 
-            <div className="flex justify-between space-x-3 pt-4">
+            <div className="flex justify-between space-x-3 mt-8">
               <button
                 onClick={() => setCurrentStep(4)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"

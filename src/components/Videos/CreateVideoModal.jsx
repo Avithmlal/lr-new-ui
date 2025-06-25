@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { X, Video, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
-import { VideoEditorPage } from './VideoEditorPage';
 
 export function CreateVideoModal({ isOpen, onClose }) {
   const { state, dispatch } = useApp();
@@ -13,8 +12,6 @@ export function CreateVideoModal({ isOpen, onClose }) {
     type: '',
     projectId: '',
   });
-  
-  const [showEditor, setShowEditor] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -59,9 +56,11 @@ export function CreateVideoModal({ isOpen, onClose }) {
       
       dispatch({ type: 'ADD_VIDEO', payload: newVideo });
       
-      // Close the modal and proceed to the editor page
+      // Close the modal and navigate to the editor page
       onClose();
-      setShowEditor(true);
+      
+      // Navigate to the video editor page with the video ID
+      navigate(`/videos/editor/${newVideo.id}`);
     } else {
       // For template based, we'll implement this later
       dispatch({
@@ -87,17 +86,6 @@ export function CreateVideoModal({ isOpen, onClose }) {
     });
     onClose();
   };
-
-  if (showEditor) {
-    return (
-      <VideoEditorPage 
-        videoData={{
-          name: formData.title,
-          projectId: formData.projectId || state.projects[0]?.id,
-        }}
-      />
-    );
-  }
 
   if (!isOpen) return null;
 
