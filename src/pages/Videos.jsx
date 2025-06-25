@@ -198,20 +198,6 @@ export function Videos() {
   };
 
   const handleCreateVideo = () => {
-    if (state.projects.length === 0) {
-      dispatch({
-        type: 'ADD_SYSTEM_MESSAGE',
-        payload: {
-          id: Date.now().toString(),
-          type: 'warning',
-          title: 'No Projects Available',
-          message: 'Create a project first before generating videos.',
-          timestamp: new Date(),
-          isRead: false,
-        }
-      });
-      return;
-    }
     setIsCreateModalOpen(true);
   };
 
