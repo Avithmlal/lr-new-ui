@@ -10,7 +10,13 @@ import {
   ChevronRight, 
   ChevronLeft,
   Loader,
-  Check
+  Check,
+  Wand2,
+  Play,
+  Pause,
+  RotateCcw,
+  FastForward,
+  Volume2
 } from 'lucide-react';
 import { ScriptEditor } from './ScriptEditor';
 import { useApp } from '../../contexts/AppContext';
@@ -51,6 +57,10 @@ export function VideoEditorPage() {
   const [selectedVoice, setSelectedVoice] = useState('');
   const [script, setScript] = useState('');
   const [mediaAnnotations, setMediaAnnotations] = useState([]);
+  const [audioSegments, setAudioSegments] = useState([]);
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [audioPreviewSegments, setAudioPreviewSegments] = useState([]);
+  const [currentPlayingSegment, setCurrentPlayingSegment] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -78,6 +88,29 @@ export function VideoEditorPage() {
       navigate('/videos');
     }
   }, [videoId, state.videos, navigate]);
+
+  // Auto-split script into segments when script changes
+  useEffect(() => {
+    if (script) {
+      const sentences = script.match(/[^\.!?]+[\.!?]+/g) || [];
+      const segments = [];
+      
+      for (let i = 0; i < sentences.length; i += 2) {
+        const segment = sentences.slice(i, i + 2).join(' ').trim();
+        if (segment) {
+          segments.push({
+            id: i / 2 + 1,
+            text: segment,
+            audioUrl: null,
+            isGenerated: false,
+            duration: 0
+          });
+        }
+      }
+      
+      setAudioSegments(segments);
+    }
+  }, [script]);
 
   const handleClose = () => {
     navigate('/videos');
@@ -114,6 +147,49 @@ export function VideoEditorPage() {
     setTimeout(() => {
       setIsSaving(false);
     }, 1000);
+  };
+
+  const generatePreviewAudio = async () => {
+    setIsGeneratingAudio(true);
+    const previewSegments = audioSegments.slice(0, 3);
+    
+    // Simulate audio generation
+    for (let i = 0; i < previewSegments.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setAudioPreviewSegments(prev => [
+        ...prev,
+        {
+          ...previewSegments[i],
+          audioUrl: `#audio-${previewSegments[i].id}`,
+          isGenerated: true,
+          duration: Math.floor(Math.random() * 10) + 5
+        }
+      ]);
+    }
+    
+    setIsGeneratingAudio(false);
+  };
+
+  const generateAllAudio = async () => {
+    setIsGeneratingAudio(true);
+    const allSegments = [...audioSegments];
+    
+    // Simulate generating all segments
+    for (let i = 0; i < allSegments.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      allSegments[i] = {
+        ...allSegments[i],
+        audioUrl: `#audio-${allSegments[i].id}`,
+        isGenerated: true,
+        duration: Math.floor(Math.random() * 10) + 5
+      };
+      
+      setAudioSegments([...allSegments]);
+    }
+    
+    setIsGeneratingAudio(false);
   };
 
   const handleGenerateVideo = async () => {
@@ -170,6 +246,8 @@ export function VideoEditorPage() {
         return selectedModel && selectedAvatar && selectedVoice;
       case 2:
         return script.length > 0;
+      case 3:
+        return audioSegments.length > 0 && audioSegments.every(s => s.isGenerated);
       default:
         return true;
     }
@@ -245,7 +323,8 @@ export function VideoEditorPage() {
             {[
               { step: 1, label: 'Select Avatar & Voice' },
               { step: 2, label: 'Script & Media' },
-              { step: 3, label: 'Generate Video' }
+              { step: 3, label: 'Audio Generation' },
+              { step: 4, label: 'Generate Video' }
             ].map(({ step, label }) => (
               <div key={step} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
@@ -258,8 +337,8 @@ export function VideoEditorPage() {
                   {step < currentStep ? <Check className="w-5 h-5" /> : step}
                 </div>
                 <div className="text-sm font-medium text-gray-700 ml-2">{label}</div>
-                {step < 3 && (
-                  <div className={`w-24 h-1 mx-4 ${
+                {step < 4 && (
+                  <div className={`w-16 h-1 mx-4 ${
                     step < currentStep ? 'bg-green-600' : 'bg-gray-200'
                   }`}></div>
                 )}
@@ -421,22 +500,145 @@ export function VideoEditorPage() {
               onMediaAssign={setMediaAnnotations}
               initialAnnotations={mediaAnnotations}
             />
-            
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="font-medium text-blue-900 mb-2">Script & Media Guidelines</h3>
-              <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Highlight text to assign slides, stock videos, or uploaded videos</li>
-                <li>• Each highlighted section can only have one media assignment</li>
-                <li>• For best results, keep sentences clear and concise</li>
-                <li>• Use PowerPoint slides for key points and explanations</li>
-                <li>• Use stock videos for dynamic visual elements</li>
-                <li>• Upload custom videos for specific demonstrations</li>
-              </ul>
-            </div>
           </div>
         )}
 
         {currentStep === 3 && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Audio Generation</h2>
+              
+              {/* Voice Settings */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <h3 className="font-medium text-gray-900 mb-3">Voice Settings</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Pitch</label>
+                    <input
+                      type="range"
+                      min="-10"
+                      max="10"
+                      defaultValue="0"
+                      className="w-full"
+                    />
+                    <span className="text-xs text-gray-500">0</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Speed</label>
+                    <input
+                      type="range"
+                      min="0.5"
+                      max="2"
+                      step="0.1"
+                      defaultValue="1"
+                      className="w-full"
+                    />
+                    <span className="text-xs text-gray-500">1.0x</span>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tone</label>
+                    <select
+                      defaultValue="neutral"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                    >
+                      <option value="neutral">Neutral</option>
+                      <option value="friendly">Friendly</option>
+                      <option value="professional">Professional</option>
+                      <option value="enthusiastic">Enthusiastic</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Preview Phase */}
+              <div className="border border-gray-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-medium text-gray-900">Preview Phase</h3>
+                  <button
+                    onClick={generatePreviewAudio}
+                    disabled={isGeneratingAudio || audioPreviewSegments.length > 0}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isGeneratingAudio ? (
+                      <>
+                        <Loader className="w-4 h-4 mr-2 inline animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-4 h-4 mr-2 inline" />
+                        Generate First 3 Segments
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {audioPreviewSegments.length > 0 && (
+                  <div className="space-y-3">
+                    {audioPreviewSegments.map((segment) => (
+                      <div key={segment.id} className="flex items-center p-3 bg-blue-50 rounded-lg">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">Segment {segment.id}</p>
+                          <p className="text-xs text-gray-600">{segment.text}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs text-gray-500">{segment.duration}s</span>
+                          <button
+                            onClick={() => setCurrentPlayingSegment(segment.id === currentPlayingSegment ? null : segment.id)}
+                            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                          >
+                            {currentPlayingSegment === segment.id ? (
+                              <Pause className="w-4 h-4" />
+                            ) : (
+                              <Play className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button className="p-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300">
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Full Generation */}
+              {audioPreviewSegments.length > 0 && (
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-medium text-gray-900">Full Generation</h3>
+                    <button
+                      onClick={generateAllAudio}
+                      disabled={isGeneratingAudio}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isGeneratingAudio ? (
+                        <>
+                          <Loader className="w-4 h-4 mr-2 inline animate-spin" />
+                          Generating All...
+                        </>
+                      ) : (
+                        <>
+                          <FastForward className="w-4 h-4 mr-2 inline" />
+                          Generate All Segments
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-800">
+                      Ready to generate all {audioSegments.length} audio segments with your current voice settings.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {currentStep === 4 && (
           <div className="space-y-6">
             {isGenerating ? (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
@@ -559,7 +761,7 @@ export function VideoEditorPage() {
             <div></div> // Empty div to maintain flex spacing
           )}
           
-          {currentStep < 3 && (
+          {currentStep < 4 && (
             <button
               onClick={() => setCurrentStep(currentStep + 1)}
               disabled={!canProceedToNext()}

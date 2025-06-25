@@ -7,11 +7,8 @@ import {
   Search, 
   X, 
   Play, 
-  ChevronRight, 
-  ChevronLeft, 
-  Check,
-  AlertTriangle,
-  Info
+  Info,
+  AlertTriangle
 } from 'lucide-react';
 
 export function ScriptEditor({ 
@@ -24,23 +21,17 @@ export function ScriptEditor({
   const [selectedText, setSelectedText] = useState('');
   const [selectionRange, setSelectionRange] = useState(null);
   const [annotations, setAnnotations] = useState(initialAnnotations);
-  const [showMediaOptions, setShowMediaOptions] = useState(false);
-  const [mediaOptionsPosition, setMediaOptionsPosition] = useState({ top: 0, left: 0 });
-  const [showSlidePanel, setShowSlidePanel] = useState(false);
-  const [showStockPanel, setShowStockPanel] = useState(false);
-  const [stockKeyword, setStockKeyword] = useState('');
   const [uploadedPpt, setUploadedPpt] = useState(null);
   const [slides, setSlides] = useState([]);
+  const [showSlidePanel, setShowSlidePanel] = useState(false);
+  const [stockKeyword, setStockKeyword] = useState('');
   const [stockVideos, setStockVideos] = useState([]);
-  const [hoveredAnnotation, setHoveredAnnotation] = useState(null);
-  const [showAnnotationPreview, setShowAnnotationPreview] = useState(false);
-  const [previewAnnotation, setPreviewAnnotation] = useState(null);
-  const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0 });
+  const [showStockPanel, setShowStockPanel] = useState(false);
+  const [showUploadPanel, setShowUploadPanel] = useState(false);
+  const [highlightedAnnotation, setHighlightedAnnotation] = useState(null);
   const [error, setError] = useState(null);
   
   const editorRef = useRef(null);
-  const mediaOptionsRef = useRef(null);
-  const previewRef = useRef(null);
 
   // Initialize with mock slides if PPT is uploaded
   useEffect(() => {
@@ -67,8 +58,8 @@ export function ScriptEditor({
     setStockVideos(mockStockVideos);
   };
 
-  // Handle text selection
-  const handleTextSelection = () => {
+  // Get current text selection
+  const getTextSelection = () => {
     if (window.getSelection) {
       const selection = window.getSelection();
       const selectedText = selection.toString().trim();
@@ -76,17 +67,10 @@ export function ScriptEditor({
       if (selectedText && editorRef.current.contains(selection.anchorNode)) {
         // Get selection range
         const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        const editorRect = editorRef.current.getBoundingClientRect();
-        
-        // Calculate position for media options popup
-        const top = rect.bottom - editorRect.top;
-        const left = rect.left + (rect.width / 2) - editorRect.left;
-        
-        // Check for overlapping annotations
         const start = range.startOffset;
         const end = range.endOffset;
         
+        // Check for overlapping annotations
         const hasOverlap = annotations.some(annotation => {
           return (
             (start >= annotation.range.start && start < annotation.range.end) ||
@@ -98,47 +82,68 @@ export function ScriptEditor({
         if (hasOverlap) {
           setError("Selected text overlaps with existing annotations. Please select a different text segment.");
           setTimeout(() => setError(null), 3000);
-          return;
+          return null;
         }
         
-        setSelectedText(selectedText);
-        setSelectionRange({ start, end });
-        setMediaOptionsPosition({ top, left });
-        setShowMediaOptions(true);
-      } else {
-        setShowMediaOptions(false);
+        return {
+          text: selectedText,
+          range: { start, end }
+        };
       }
+    }
+    return null;
+  };
+
+  // Handle slide assignment
+  const handleAssignSlide = () => {
+    const selection = getTextSelection();
+    if (selection) {
+      setSelectedText(selection.text);
+      setSelectionRange(selection.range);
+      setShowSlidePanel(true);
+      setShowStockPanel(false);
+      setShowUploadPanel(false);
+    } else {
+      setError("Please select text first to assign a slide");
+      setTimeout(() => setError(null), 3000);
     }
   };
 
-  // Handle media assignment
-  const handleMediaAssign = (mediaType) => {
-    if (mediaType === 'slide') {
-      setShowSlidePanel(true);
-      setShowStockPanel(false);
-    } else if (mediaType === 'stock') {
-      setShowSlidePanel(false);
+  // Handle stock video assignment
+  const handleAssignStock = () => {
+    const selection = getTextSelection();
+    if (selection) {
+      setSelectedText(selection.text);
+      setSelectionRange(selection.range);
       setShowStockPanel(true);
-    } else if (mediaType === 'upload') {
-      // Trigger file upload
-      const fileInput = document.createElement('input');
-      fileInput.type = 'file';
-      fileInput.accept = 'video/*';
-      fileInput.onchange = (e) => {
-        if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          addAnnotation({
-            type: 'upload',
-            content: file.name,
-            metadata: {
-              fileType: file.type,
-              fileSize: file.size,
-              fileName: file.name
-            }
-          });
-        }
-      };
-      fileInput.click();
+      setShowSlidePanel(false);
+      setShowUploadPanel(false);
+    } else {
+      setError("Please select text first to assign a stock video");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Handle video upload assignment
+  const handleAssignUpload = () => {
+    const selection = getTextSelection();
+    if (selection) {
+      setSelectedText(selection.text);
+      setSelectionRange(selection.range);
+      setShowUploadPanel(true);
+      setShowSlidePanel(false);
+      setShowStockPanel(false);
+    } else {
+      setError("Please select text first to assign an uploaded video");
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
+  // Handle stock video search
+  const handleStockSearch = (e) => {
+    e.preventDefault();
+    if (stockKeyword.trim()) {
+      searchStockVideos(stockKeyword);
     }
   };
 
@@ -164,9 +169,9 @@ export function ScriptEditor({
     }
     
     // Reset selection state
-    setShowMediaOptions(false);
     setShowSlidePanel(false);
     setShowStockPanel(false);
+    setShowUploadPanel(false);
     setSelectedText('');
     setSelectionRange(null);
   };
@@ -181,7 +186,7 @@ export function ScriptEditor({
       onMediaAssign(updatedAnnotations);
     }
     
-    setShowAnnotationPreview(false);
+    setHighlightedAnnotation(null);
   };
 
   // Handle PPT upload
@@ -196,44 +201,21 @@ export function ScriptEditor({
     }
   };
 
-  // Handle stock video search
-  const handleStockSearch = (e) => {
-    e.preventDefault();
-    if (stockKeyword.trim()) {
-      searchStockVideos(stockKeyword);
+  // Handle file upload
+  const handleFileUpload = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      addAnnotation({
+        type: 'upload',
+        content: file.name,
+        metadata: {
+          fileType: file.type,
+          fileSize: file.size,
+          fileName: file.name
+        }
+      });
     }
   };
-
-  // Show annotation preview when clicking on highlighted text
-  const handleAnnotationClick = (annotation, e) => {
-    const rect = e.target.getBoundingClientRect();
-    const editorRect = editorRef.current.getBoundingClientRect();
-    
-    setPreviewAnnotation(annotation);
-    setPreviewPosition({
-      top: rect.bottom - editorRect.top,
-      left: rect.left + (rect.width / 2) - editorRect.left
-    });
-    setShowAnnotationPreview(true);
-  };
-
-  // Close preview when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (previewRef.current && !previewRef.current.contains(e.target)) {
-        setShowAnnotationPreview(false);
-      }
-      
-      if (mediaOptionsRef.current && !mediaOptionsRef.current.contains(e.target) && !editorRef.current.contains(e.target)) {
-        setShowMediaOptions(false);
-      }
-    };
-    
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   // Get color for annotation type
   const getAnnotationColor = (type) => {
@@ -245,78 +227,18 @@ export function ScriptEditor({
     }
   };
 
-  // Render the script with annotations
-  const renderAnnotatedScript = () => {
-    if (!text) return null;
-    
-    // Sort annotations by start position
-    const sortedAnnotations = [...annotations].sort((a, b) => a.range.start - b.range.start);
-    
-    const result = [];
-    let lastEnd = 0;
-    
-    sortedAnnotations.forEach((annotation, index) => {
-      // Add text before this annotation
-      if (annotation.range.start > lastEnd) {
-        result.push(
-          <span key={`text-${index}`} className="text-gray-900">
-            {text.substring(lastEnd, annotation.range.start)}
-          </span>
-        );
-      }
-      
-      // Add the highlighted annotation
-      result.push(
-        <span 
-          key={`highlight-${annotation.id}`}
-          className={`cursor-pointer border-b-2 ${getAnnotationColor(annotation.type)}`}
-          onClick={(e) => handleAnnotationClick(annotation, e)}
-          onMouseEnter={() => setHoveredAnnotation(annotation.id)}
-          onMouseLeave={() => setHoveredAnnotation(null)}
-        >
-          {text.substring(annotation.range.start, annotation.range.end)}
-        </span>
-      );
-      
-      lastEnd = annotation.range.end;
-    });
-    
-    // Add any remaining text
-    if (lastEnd < text.length) {
-      result.push(
-        <span key="text-end" className="text-gray-900">
-          {text.substring(lastEnd)}
-        </span>
-      );
-    }
-    
-    return result;
+  // Highlight a specific annotation in the script
+  const highlightAnnotation = (annotationId) => {
+    setHighlightedAnnotation(annotationId);
   };
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Editor Header */}
       <div className="p-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center">
-            <FileText className="w-5 h-5 text-gray-600 mr-2" />
-            <h3 className="text-lg font-semibold text-gray-900">Script Editor</h3>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-600">
-              {annotations.length} annotations
-            </span>
-            <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-              {annotations.filter(a => a.type === 'slide').length} slides
-            </span>
-            <span className="text-xs px-2 py-1 bg-purple-100 text-purple-800 rounded-full">
-              {annotations.filter(a => a.type === 'stock').length} stock videos
-            </span>
-            <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded-full">
-              {annotations.filter(a => a.type === 'upload').length} uploads
-            </span>
-          </div>
+        <div className="flex items-center">
+          <FileText className="w-5 h-5 text-gray-600 mr-2" />
+          <h3 className="text-lg font-semibold text-gray-900">Script Editor</h3>
         </div>
         
         <div className="flex items-center space-x-3">
@@ -381,7 +303,7 @@ export function ScriptEditor({
         {/* Main Editor */}
         <div className={`flex-1 ${showSlidePanel ? 'border-r border-gray-200' : ''}`}>
           <div className="relative">
-            {/* Actual textarea for editing */}
+            {/* Simple text editor */}
             <textarea
               ref={editorRef}
               value={text}
@@ -391,21 +313,15 @@ export function ScriptEditor({
                   onScriptChange(e.target.value);
                 }
               }}
-              onMouseUp={handleTextSelection}
-              className="w-full h-[500px] p-6 font-mono text-base resize-none border-0 focus:ring-0 focus:outline-none"
-              placeholder="Type or paste your script here. Highlight text to assign media elements..."
+              className="w-full h-[400px] p-6 font-mono text-base resize-none border-0 focus:ring-0 focus:outline-none"
+              placeholder="Type or paste your script here..."
             />
-            
-            {/* Overlay for highlighted text */}
-            <div className="absolute inset-0 pointer-events-none p-6 font-mono text-base">
-              {renderAnnotatedScript()}
-            </div>
           </div>
         </div>
 
         {/* Slides Panel */}
         {showSlidePanel && (
-          <div className="w-80 bg-gray-50 border-l border-gray-200 overflow-y-auto h-[500px]">
+          <div className="w-80 bg-gray-50 border-l border-gray-200 overflow-y-auto h-[400px]">
             <div className="p-4 border-b border-gray-200 bg-white">
               <h4 className="font-medium text-gray-900">PowerPoint Slides</h4>
               <p className="text-sm text-gray-600 mt-1">
@@ -449,47 +365,101 @@ export function ScriptEditor({
         )}
       </div>
 
-      {/* Media Options Popup */}
-      {showMediaOptions && (
-        <div 
-          ref={mediaOptionsRef}
-          className="absolute bg-white rounded-lg shadow-lg border border-gray-200 z-10 p-2"
-          style={{ 
-            top: `${mediaOptionsPosition.top}px`, 
-            left: `${mediaOptionsPosition.left}px`,
-            transform: 'translateX(-50%)'
-          }}
+      {/* Media Assignment Buttons */}
+      <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center space-x-4">
+        <button
+          onClick={handleAssignSlide}
+          disabled={!uploadedPpt}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="flex space-x-1">
-            <button
-              onClick={() => handleMediaAssign('slide')}
-              className="p-2 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
-              disabled={!uploadedPpt}
-              title={!uploadedPpt ? "Upload a PowerPoint first" : "Assign slide"}
-            >
-              <Image className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => handleMediaAssign('stock')}
-              className="p-2 bg-purple-100 text-purple-700 rounded hover:bg-purple-200 transition-colors"
-            >
-              <Video className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => handleMediaAssign('upload')}
-              className="p-2 bg-green-100 text-green-700 rounded hover:bg-green-200 transition-colors"
-            >
-              <Upload className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowMediaOptions(false)}
-              className="p-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
+          <Image className="w-4 h-4 mr-2 inline" />
+          Assign Slide
+        </button>
+        
+        <button
+          onClick={handleAssignStock}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          <Video className="w-4 h-4 mr-2 inline" />
+          Assign Stock Video
+        </button>
+        
+        <button
+          onClick={handleAssignUpload}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <Upload className="w-4 h-4 mr-2 inline" />
+          Assign Uploaded Video
+        </button>
+      </div>
+
+      {/* Annotations List */}
+      <div className="border-t border-gray-200">
+        <div className="p-4 bg-gray-50">
+          <h4 className="font-medium text-gray-900">Media Annotations</h4>
+          <p className="text-sm text-gray-600 mt-1">
+            {annotations.length > 0 
+              ? 'Click on an annotation to highlight it in the script'
+              : 'No annotations yet. Select text and assign media.'}
+          </p>
         </div>
-      )}
+        
+        {annotations.length > 0 ? (
+          <div className="max-h-[200px] overflow-y-auto">
+            {annotations.map((annotation) => (
+              <div 
+                key={annotation.id}
+                onClick={() => highlightAnnotation(annotation.id)}
+                className={`p-3 border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${
+                  highlightedAnnotation === annotation.id ? 'bg-gray-100' : ''
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3">
+                    <div className={`px-2 py-1 rounded text-xs font-medium ${
+                      annotation.type === 'slide' ? 'bg-blue-100 text-blue-800' :
+                      annotation.type === 'stock' ? 'bg-purple-100 text-purple-800' :
+                      'bg-green-100 text-green-800'
+                    }`}>
+                      {annotation.type === 'slide' ? 'Slide' :
+                       annotation.type === 'stock' ? 'Stock' :
+                       'Upload'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{annotation.content}</p>
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">"{annotation.text}"</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeAnnotation(annotation.id);
+                    }}
+                    className="text-red-500 hover:text-red-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                
+                {annotation.metadata.thumbnailUrl && (
+                  <div className="mt-2">
+                    <img 
+                      src={annotation.metadata.thumbnailUrl}
+                      alt={annotation.content}
+                      className="h-16 w-auto object-cover rounded"
+                    />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="p-6 text-center text-gray-500">
+            <Video className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+            <p>No media annotations yet</p>
+          </div>
+        )}
+      </div>
 
       {/* Stock Video Panel */}
       {showStockPanel && (
@@ -576,54 +546,42 @@ export function ScriptEditor({
         </div>
       )}
 
-      {/* Annotation Preview */}
-      {showAnnotationPreview && previewAnnotation && (
-        <div 
-          ref={previewRef}
-          className="absolute bg-white rounded-lg shadow-lg border border-gray-200 z-10 p-3 w-64"
-          style={{ 
-            top: `${previewPosition.top}px`, 
-            left: `${previewPosition.left}px`,
-            transform: 'translateX(-50%)'
-          }}
-        >
-          <div className="flex items-start justify-between mb-2">
-            <div className={`px-2 py-1 rounded text-xs font-medium ${
-              previewAnnotation.type === 'slide' ? 'bg-blue-100 text-blue-800' :
-              previewAnnotation.type === 'stock' ? 'bg-purple-100 text-purple-800' :
-              'bg-green-100 text-green-800'
-            }`}>
-              {previewAnnotation.type === 'slide' ? 'PowerPoint Slide' :
-               previewAnnotation.type === 'stock' ? 'Stock Video' :
-               'Uploaded Video'}
+      {/* Upload Video Panel */}
+      {showUploadPanel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">Upload Video</h3>
+              <button
+                onClick={() => setShowUploadPanel(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <button
-              onClick={() => removeAnnotation(previewAnnotation.id)}
-              className="text-red-500 hover:text-red-700"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">Upload a video file to include in your presentation.</p>
+              
+              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                <input
+                  type="file"
+                  id="video-upload"
+                  className="hidden"
+                  accept="video/*"
+                  onChange={handleFileUpload}
+                />
+                <label 
+                  htmlFor="video-upload"
+                  className="cursor-pointer"
+                >
+                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                  <p className="text-sm font-medium text-gray-900 mb-1">Click to upload video</p>
+                  <p className="text-xs text-gray-500">MP4, MOV, or WebM (max 100MB)</p>
+                </label>
+              </div>
+            </div>
           </div>
-          
-          {previewAnnotation.metadata.thumbnailUrl && (
-            <img 
-              src={previewAnnotation.metadata.thumbnailUrl}
-              alt={previewAnnotation.content}
-              className="w-full h-32 object-cover rounded mb-2"
-            />
-          )}
-          
-          <p className="text-sm font-medium text-gray-900">{previewAnnotation.content}</p>
-          
-          {previewAnnotation.type === 'stock' && previewAnnotation.metadata.keyword && (
-            <p className="text-xs text-gray-500 mt-1">Keyword: {previewAnnotation.metadata.keyword}</p>
-          )}
-          
-          {previewAnnotation.type === 'upload' && previewAnnotation.metadata.fileName && (
-            <p className="text-xs text-gray-500 mt-1">File: {previewAnnotation.metadata.fileName}</p>
-          )}
-          
-          <p className="text-xs text-gray-500 mt-2 italic">"{previewAnnotation.text}"</p>
         </div>
       )}
     </div>
