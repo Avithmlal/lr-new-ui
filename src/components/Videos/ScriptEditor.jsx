@@ -58,8 +58,8 @@ export function ScriptEditor({
     setStockVideos(mockStockVideos);
   };
 
-  // Get current text selection
-  const getTextSelection = () => {
+  // Update selection when text is selected
+  const handleTextSelection = () => {
     if (window.getSelection) {
       const selection = window.getSelection();
       const selectedText = selection.toString().trim();
@@ -82,61 +82,52 @@ export function ScriptEditor({
         if (hasOverlap) {
           setError("Selected text overlaps with existing annotations. Please select a different text segment.");
           setTimeout(() => setError(null), 3000);
-          return null;
+          return;
         }
         
-        return {
-          text: selectedText,
-          range: { start, end }
-        };
+        setSelectedText(selectedText);
+        setSelectionRange({ start, end });
       }
     }
-    return null;
   };
 
   // Handle slide assignment
   const handleAssignSlide = () => {
-    const selection = getTextSelection();
-    if (selection) {
-      setSelectedText(selection.text);
-      setSelectionRange(selection.range);
-      setShowSlidePanel(true);
-      setShowStockPanel(false);
-      setShowUploadPanel(false);
-    } else {
+    if (!selectedText || !selectionRange) {
       setError("Please select text first to assign a slide");
       setTimeout(() => setError(null), 3000);
+      return;
     }
+    
+    setShowSlidePanel(true);
+    setShowStockPanel(false);
+    setShowUploadPanel(false);
   };
 
   // Handle stock video assignment
   const handleAssignStock = () => {
-    const selection = getTextSelection();
-    if (selection) {
-      setSelectedText(selection.text);
-      setSelectionRange(selection.range);
-      setShowStockPanel(true);
-      setShowSlidePanel(false);
-      setShowUploadPanel(false);
-    } else {
+    if (!selectedText || !selectionRange) {
       setError("Please select text first to assign a stock video");
       setTimeout(() => setError(null), 3000);
+      return;
     }
+    
+    setShowStockPanel(true);
+    setShowSlidePanel(false);
+    setShowUploadPanel(false);
   };
 
   // Handle video upload assignment
   const handleAssignUpload = () => {
-    const selection = getTextSelection();
-    if (selection) {
-      setSelectedText(selection.text);
-      setSelectionRange(selection.range);
-      setShowUploadPanel(true);
-      setShowSlidePanel(false);
-      setShowStockPanel(false);
-    } else {
+    if (!selectedText || !selectionRange) {
       setError("Please select text first to assign an uploaded video");
       setTimeout(() => setError(null), 3000);
+      return;
     }
+    
+    setShowUploadPanel(true);
+    setShowSlidePanel(false);
+    setShowStockPanel(false);
   };
 
   // Handle stock video search
@@ -313,6 +304,7 @@ export function ScriptEditor({
                   onScriptChange(e.target.value);
                 }
               }}
+              onMouseUp={handleTextSelection}
               className="w-full h-[400px] p-6 font-mono text-base resize-none border-0 focus:ring-0 focus:outline-none"
               placeholder="Type or paste your script here..."
             />
@@ -365,11 +357,20 @@ export function ScriptEditor({
         )}
       </div>
 
+      {/* Selected Text Info */}
+      {selectedText && (
+        <div className="p-3 bg-yellow-50 border-t border-yellow-200">
+          <p className="text-sm text-yellow-800">
+            <span className="font-medium">Selected text:</span> "{selectedText}"
+          </p>
+        </div>
+      )}
+
       {/* Media Assignment Buttons */}
       <div className="p-4 border-t border-gray-200 bg-gray-50 flex items-center space-x-4">
         <button
           onClick={handleAssignSlide}
-          disabled={!uploadedPpt}
+          disabled={!uploadedPpt || !selectedText}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Image className="w-4 h-4 mr-2 inline" />
@@ -378,7 +379,8 @@ export function ScriptEditor({
         
         <button
           onClick={handleAssignStock}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          disabled={!selectedText}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Video className="w-4 h-4 mr-2 inline" />
           Assign Stock Video
@@ -386,7 +388,8 @@ export function ScriptEditor({
         
         <button
           onClick={handleAssignUpload}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          disabled={!selectedText}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Upload className="w-4 h-4 mr-2 inline" />
           Assign Uploaded Video
