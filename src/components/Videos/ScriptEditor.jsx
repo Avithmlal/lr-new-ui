@@ -32,6 +32,7 @@ export function ScriptEditor({
   const [error, setError] = useState(null);
   
   const editorRef = useRef(null);
+  const annotatedTextRef = useRef(null);
 
   // Initialize with mock slides if PPT is uploaded
   useEffect(() => {
@@ -60,35 +61,34 @@ export function ScriptEditor({
 
   // Update selection when text is selected
   const handleTextSelection = () => {
-    if (window.getSelection) {
-      const selection = window.getSelection();
-      const selectedText = selection.toString().trim();
+    if (editorRef.current) {
+      const textarea = editorRef.current;
+      const selectionStart = textarea.selectionStart;
+      const selectionEnd = textarea.selectionEnd;
       
-      if (selectedText) {
-        // Get selection range relative to the textarea
-        const textareaValue = editorRef.current.value;
-        const selectionStart = editorRef.current.selectionStart;
-        const selectionEnd = editorRef.current.selectionEnd;
+      if (selectionStart !== selectionEnd) {
+        const selectedText = textarea.value.substring(selectionStart, selectionEnd);
         
-        if (selectionStart !== selectionEnd) {
-          // Check for overlapping annotations
-          const hasOverlap = annotations.some(annotation => {
-            return (
-              (selectionStart >= annotation.range.start && selectionStart < annotation.range.end) ||
-              (selectionEnd > annotation.range.start && selectionEnd <= annotation.range.end) ||
-              (selectionStart <= annotation.range.start && selectionEnd >= annotation.range.end)
-            );
-          });
-          
-          if (hasOverlap) {
-            setError("Selected text overlaps with existing annotations. Please select a different text segment.");
-            setTimeout(() => setError(null), 3000);
-            return;
-          }
-          
-          setSelectedText(selectedText);
-          setSelectionRange({ start: selectionStart, end: selectionEnd });
+        // Check for overlapping annotations
+        const hasOverlap = annotations.some(annotation => {
+          return (
+            (selectionStart >= annotation.range.start && selectionStart < annotation.range.end) ||
+            (selectionEnd > annotation.range.start && selectionEnd <= annotation.range.end) ||
+            (selectionStart <= annotation.range.start && selectionEnd >= annotation.range.end)
+          );
+        });
+        
+        if (hasOverlap) {
+          setError("Selected text overlaps with existing annotations. Please select a different text segment.");
+          setTimeout(() => setError(null), 3000);
+          return;
         }
+        
+        setSelectedText(selectedText);
+        setSelectionRange({ start: selectionStart, end: selectionEnd });
+      } else {
+        setSelectedText('');
+        setSelectionRange(null);
       }
     }
   };
@@ -229,6 +229,45 @@ export function ScriptEditor({
   // Highlight a specific annotation in the script
   const highlightAnnotation = (annotationId) => {
     setHighlightedAnnotation(annotationId);
+    
+    // Scroll to the annotation in the editor
+    const annotation = annotations.find(a => a.id === annotationId);
+    if (annotation && editorRef.current) {
+      // Set selection to the annotation range
+      editorRef.current.focus();
+      editorRef.current.setSelectionRange(annotation.range.start, annotation.range.end);
+      
+      // Scroll to make the selection visible
+      const lineHeight = 20; // Approximate line height
+      const linesBeforeSelection = text.substring(0, annotation.range.start).split('\n').length - 1;
+      const scrollPosition = linesBeforeSelection * lineHeight;
+      editorRef.current.scrollTop = scrollPosition;
+    }
+  };
+
+  // Render the script with highlighted annotations
+  const renderAnnotatedScript = () => {
+    if (!text) return null;
+    
+    // If no annotation is highlighted, just show the plain text
+    if (!highlightedAnnotation) return text;
+    
+    // Find the highlighted annotation
+    const annotation = annotations.find(a => a.id === highlightedAnnotation);
+    if (!annotation) return text;
+    
+    // Split the text into three parts: before, highlighted, and after
+    const beforeText = text.substring(0, annotation.range.start);
+    const highlightedText = text.substring(annotation.range.start, annotation.range.end);
+    const afterText = text.substring(annotation.range.end);
+    
+    return (
+      <>
+        {beforeText}
+        <span className="bg-yellow-200">{highlightedText}</span>
+        {afterText}
+      </>
+    );
   };
 
   return (
@@ -312,7 +351,7 @@ export function ScriptEditor({
                   onScriptChange(e.target.value);
                 }
               }}
-              onMouseUp={handleTextSelection}
+              onSelect={handleTextSelection}
               className="w-full h-[400px] p-6 font-mono text-base resize-none border-0 focus:ring-0 focus:outline-none"
               placeholder="Type or paste your script here..."
             />
