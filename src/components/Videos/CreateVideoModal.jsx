@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Video, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
-import { VideoEditor } from './VideoEditor';
+import { VideoEditorPage } from './VideoEditorPage';
 
 export function CreateVideoModal({ isOpen, onClose }) {
   const { state, dispatch } = useApp();
@@ -22,6 +22,45 @@ export function CreateVideoModal({ isOpen, onClose }) {
     if (!formData.title || !formData.type) return;
     
     if (formData.type === 'basic') {
+      // Create a video object in the backend first
+      const newVideo = {
+        id: Date.now().toString(),
+        title: formData.title,
+        description: 'AI-generated video with avatar and voice synthesis',
+        type: 'basic',
+        projectId: formData.projectId || state.projects[0]?.id || '',
+        projectTitle: formData.projectId 
+          ? state.projects.find(p => p.id === formData.projectId)?.title 
+          : state.projects[0]?.title || 'Unknown Project',
+        status: 'draft',
+        duration: 0,
+        thumbnailUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
+        videoUrl: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        views: 0,
+        creator: {
+          name: 'Current User',
+          email: 'user@example.com',
+          avatar: ''
+        },
+        metadata: {
+          resolution: '1080p',
+          format: 'mp4',
+          size: null,
+          avatar: '',
+          voice: '',
+          language: 'English',
+          style: 'professional',
+          includeSubtitles: true,
+          backgroundMusic: false
+        }
+      };
+      
+      dispatch({ type: 'ADD_VIDEO', payload: newVideo });
+      
+      // Close the modal and proceed to the editor page
+      onClose();
       setShowEditor(true);
     } else {
       // For template based, we'll implement this later
@@ -46,17 +85,12 @@ export function CreateVideoModal({ isOpen, onClose }) {
       type: '',
       projectId: '',
     });
-    setShowEditor(false);
     onClose();
   };
 
-  if (!isOpen) return null;
-  
   if (showEditor) {
     return (
-      <VideoEditor 
-        isOpen={true} 
-        onClose={handleClose} 
+      <VideoEditorPage 
         videoData={{
           name: formData.title,
           projectId: formData.projectId || state.projects[0]?.id,
@@ -64,6 +98,8 @@ export function CreateVideoModal({ isOpen, onClose }) {
       />
     );
   }
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
