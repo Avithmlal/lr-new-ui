@@ -64,29 +64,31 @@ export function ScriptEditor({
       const selection = window.getSelection();
       const selectedText = selection.toString().trim();
       
-      if (selectedText && editorRef.current.contains(selection.anchorNode)) {
-        // Get selection range
-        const range = selection.getRangeAt(0);
-        const start = range.startOffset;
-        const end = range.endOffset;
+      if (selectedText) {
+        // Get selection range relative to the textarea
+        const textareaValue = editorRef.current.value;
+        const selectionStart = editorRef.current.selectionStart;
+        const selectionEnd = editorRef.current.selectionEnd;
         
-        // Check for overlapping annotations
-        const hasOverlap = annotations.some(annotation => {
-          return (
-            (start >= annotation.range.start && start < annotation.range.end) ||
-            (end > annotation.range.start && end <= annotation.range.end) ||
-            (start <= annotation.range.start && end >= annotation.range.end)
-          );
-        });
-        
-        if (hasOverlap) {
-          setError("Selected text overlaps with existing annotations. Please select a different text segment.");
-          setTimeout(() => setError(null), 3000);
-          return;
+        if (selectionStart !== selectionEnd) {
+          // Check for overlapping annotations
+          const hasOverlap = annotations.some(annotation => {
+            return (
+              (selectionStart >= annotation.range.start && selectionStart < annotation.range.end) ||
+              (selectionEnd > annotation.range.start && selectionEnd <= annotation.range.end) ||
+              (selectionStart <= annotation.range.start && selectionEnd >= annotation.range.end)
+            );
+          });
+          
+          if (hasOverlap) {
+            setError("Selected text overlaps with existing annotations. Please select a different text segment.");
+            setTimeout(() => setError(null), 3000);
+            return;
+          }
+          
+          setSelectedText(selectedText);
+          setSelectionRange({ start: selectionStart, end: selectionEnd });
         }
-        
-        setSelectedText(selectedText);
-        setSelectionRange({ start, end });
       }
     }
   };
@@ -95,6 +97,12 @@ export function ScriptEditor({
   const handleAssignSlide = () => {
     if (!selectedText || !selectionRange) {
       setError("Please select text first to assign a slide");
+      setTimeout(() => setError(null), 3000);
+      return;
+    }
+    
+    if (!uploadedPpt) {
+      setError("Please upload a PowerPoint presentation first");
       setTimeout(() => setError(null), 3000);
       return;
     }
@@ -371,7 +379,11 @@ export function ScriptEditor({
         <button
           onClick={handleAssignSlide}
           disabled={!uploadedPpt || !selectedText}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            !uploadedPpt || !selectedText
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
         >
           <Image className="w-4 h-4 mr-2 inline" />
           Assign Slide
@@ -380,7 +392,11 @@ export function ScriptEditor({
         <button
           onClick={handleAssignStock}
           disabled={!selectedText}
-          className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            !selectedText
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-purple-600 text-white hover:bg-purple-700'
+          }`}
         >
           <Video className="w-4 h-4 mr-2 inline" />
           Assign Stock Video
@@ -389,7 +405,11 @@ export function ScriptEditor({
         <button
           onClick={handleAssignUpload}
           disabled={!selectedText}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            !selectedText
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-green-600 text-white hover:bg-green-700'
+          }`}
         >
           <Upload className="w-4 h-4 mr-2 inline" />
           Assign Uploaded Video
