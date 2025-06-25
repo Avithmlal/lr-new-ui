@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Plus, 
   Search, 
@@ -18,6 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useApp, hasPermission } from '../contexts/AppContext';
 import { Pagination } from '../components/Common/Pagination';
+import { CreateOrganizationModal } from '../components/Organizations/CreateOrganizationModal';
 import { getOrganizationsForUI } from '../api/organizationService';
 
 export function Organizations() {
@@ -32,6 +33,7 @@ export function Organizations() {
   const [totalCount, setTotalCount] = useState(0);
   const [sortField, setSortField] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState('DESC');
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Check permissions
   const canViewOrganizations = hasPermission(state.currentUser, 'organizations', 'read');
@@ -96,6 +98,13 @@ export function Organizations() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Handle organization creation success
+  const handleCreateSuccess = (newOrganization) => {
+    // Refresh the organizations list
+    fetchOrganizations();
+    setShowCreateModal(false);
   };
 
   // Fetch organizations when filters change
@@ -193,7 +202,10 @@ export function Organizations() {
           <p className="text-gray-600 mt-1">Manage customer organizations and their settings</p>
         </div>
         {canCreateOrganization && (
-          <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-4 h-4 mr-2" />
             Add Organization
           </button>
@@ -387,6 +399,13 @@ export function Organizations() {
           className="p-4 border-t border-gray-200"
         />
       </div>
+
+      {/* Create Organization Modal */}
+      <CreateOrganizationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 }

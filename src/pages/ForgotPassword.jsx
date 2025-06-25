@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, ArrowLeft, Building2, AlertCircle, CheckCircle } from 'lucide-react';
 import { resetPasswordToken } from '../api/authServices';
