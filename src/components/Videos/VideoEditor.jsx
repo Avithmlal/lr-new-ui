@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Settings, FileText, Mic, Video as VideoIcon, Play, Pause, RotateCcw, Download, ChevronRight, ChevronLeft, Eye, Volume2, VolumeX, Sliders, Layers, Film, Sparkles, CheckCircle, AlertCircle, Clock as ClockIcon, Zap, Monitor, User, Headphones, Presentation as PresentationChart, Video, Camera, Loader, Save, FastForward, SkipForward, Upload, Wand2 } from 'lucide-react';
+import { X, Settings, FileText, Mic, Video as VideoIcon, Play, Pause, RotateCcw, Download, ChevronRight, ChevronLeft, Eye, Volume2, VolumeX, Sliders, Layers, Film, Sparkles, CheckCircle, AlertCircle, Clock as ClockIcon, Zap, Monitor, User, Headphones, Presentation as PresentationChart, Video, Camera, Loader, Save, FastForward, SkipForward, Upload, Wand2, Check, Maximize, Share, Edit } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 import { ScriptEditor } from './ScriptEditor';
 
@@ -513,7 +513,7 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
                   
                   <div className="flex items-center space-x-4 text-sm text-gray-500 mb-4">
                     <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-1" />
+                      <ClockIcon className="w-4 h-4 mr-1" />
                       <span>2:00</span>
                     </div>
                     <div className="flex items-center">
