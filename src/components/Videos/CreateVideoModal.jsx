@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { X, Video, Wand2, FileText, Sparkles, Play, Settings } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { ProfessionalVideoModal } from './ProfessionalVideoModal';
 
 export function CreateVideoModal({ isOpen, onClose }) {
   const { state, dispatch } = useApp();
+  const navigate = useNavigate();
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [showProfessionalModal, setShowProfessionalModal] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,15 +27,15 @@ export function CreateVideoModal({ isOpen, onClose }) {
     {
       id: 'basic',
       name: 'Basic Video',
-      description: 'Simple AI-generated video from your content with straightforward narration and visuals.',
+      description: 'AI-generated video with avatar and voice synthesis, including media synchronization and professional quality.',
       icon: Video,
       features: [
-        'AI narration from content',
-        'Basic visual elements',
-        'Standard templates',
-        'Quick generation'
+        'AI avatar presenters',
+        'Voice synthesis',
+        'Media synchronization',
+        'Professional quality'
       ],
-      estimatedTime: '5-10 minutes'
+      estimatedTime: '20-40 minutes'
     },
     {
       id: 'template',
@@ -46,20 +49,6 @@ export function CreateVideoModal({ isOpen, onClose }) {
         'Interactive elements'
       ],
       estimatedTime: '15-25 minutes'
-    },
-    {
-      id: 'professional',
-      name: 'Professional AI Video',
-      description: 'Advanced video creation with AI avatars, voice synthesis, and media synchronization.',
-      icon: Wand2,
-      features: [
-        'AI avatar presenters',
-        'Voice synthesis',
-        'Media synchronization',
-        'Professional quality'
-      ],
-      estimatedTime: '20-40 minutes',
-      isPremium: true
     }
   ];
 
@@ -148,7 +137,7 @@ export function CreateVideoModal({ isOpen, onClose }) {
           isRead: false,
         }
       });
-    }, 8000); //
+    }, 8000);
 
     // Reset form and close modal
     setFormData({
@@ -185,7 +174,7 @@ export function CreateVideoModal({ isOpen, onClose }) {
   };
 
   const handleTypeSelect = (type) => {
-    if (type === 'professional') {
+    if (type === 'basic') {
       setShowProfessionalModal(true);
       onClose();
       return;
@@ -260,7 +249,7 @@ export function CreateVideoModal({ isOpen, onClose }) {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Choose Video Type</h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {videoTypes.map((type) => (
                   <div
                     key={type.id}
@@ -269,15 +258,8 @@ export function CreateVideoModal({ isOpen, onClose }) {
                       formData.type === type.id
                         ? 'border-blue-500 bg-blue-50 shadow-md'
                         : 'border-gray-200 hover:border-gray-300 hover:shadow-sm'
-                    } ${type.isPremium ? 'relative overflow-hidden' : ''}`}
+                    }`}
                   >
-                    {type.isPremium && (
-                      <div className="absolute top-0 right-0">
-                        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white text-xs px-3 py-1 transform rotate-45 translate-x-2 -translate-y-1 shadow-md">
-                          Premium
-                        </div>
-                      </div>
-                    )}
                     <div className="flex items-center mb-4">
                       <div className={`w-12 h-12 rounded-lg flex items-center justify-center mr-4 ${
                         formData.type === type.id ? 'bg-blue-100' : 'bg-gray-100'

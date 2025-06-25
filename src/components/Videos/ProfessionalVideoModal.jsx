@@ -1,6 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { X, Video, Mic, FileText, Image, Upload, Play, Pause, RotateCcw, Download, Settings, Wand2, ChevronRight, ChevronLeft, Eye, Volume2, VolumeX, Sliders, Layers, Film, Sparkles, CheckCircle, AlertCircle, Clock, Zap, Monitor, User, Headphones, Presentation as PresentationChart, VideoIcon, Camera, Loader, Save, RefreshCw, SkipForward, FastForward } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, RefreshCw, Plus, Minus, Target, Clock, Users, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
+
+// Import all the icons we need
+import { Settings, FileText, Mic, Video as VideoIcon, Play, Pause, RotateCcw, Download, ChevronRight, ChevronLeft, Eye, Volume2, VolumeX, Sliders, Layers, Film, Sparkles, CheckCircle, AlertCircle, Clock as ClockIcon, Zap, Monitor, User, Headphones, Presentation as PresentationChart, Video, Camera, Loader, Save, FastForward, SkipForward, Upload, Wand2 } from 'lucide-react';
 
 const HEYGEN_AVATARS = [
   { id: 'heygen-sarah', name: 'Sarah - Professional', provider: 'Heygen', style: 'Business Professional', gender: 'Female', thumbnail: 'https://images.pexels.com/photos/3785077/pexels-photo-3785077.jpeg?auto=compress&cs=tinysrgb&w=150' },
@@ -32,6 +36,7 @@ const AKOOL_VOICES = [
 
 export function ProfessionalVideoModal({ isOpen, onClose }) {
   const { state, dispatch } = useApp();
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [videoData, setVideoData] = useState({
     name: '',
@@ -56,6 +61,8 @@ export function ProfessionalVideoModal({ isOpen, onClose }) {
   const [audioPreviewSegments, setAudioPreviewSegments] = useState([]);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [currentPlayingSegment, setCurrentPlayingSegment] = useState(null);
+  const [highlightedRanges, setHighlightedRanges] = useState([]);
+  const [hoveredRange, setHoveredRange] = useState(null);
 
   // Auto-split script into segments
   useEffect(() => {
@@ -85,24 +92,51 @@ export function ProfessionalVideoModal({ isOpen, onClose }) {
     const text = selection.toString();
     if (text.length > 0) {
       setSelectedText(text);
+      
+      // Get the range information for highlighting
+      const range = selection.getRangeAt(0);
+      const startOffset = range.startOffset;
+      const endOffset = range.endOffset;
+      
+      // Store the selection range for highlighting
       setShowMediaAssignment(true);
     }
   };
 
   const assignMedia = (type, content) => {
     if (selectedText) {
-      const assignment = {
-        id: Date.now(),
-        text: selectedText,
-        type, // 'slide', 'stock-video', 'upload'
-        content,
-        timestamp: Date.now()
-      };
+      const selection = window.getSelection();
+      const range = selection.getRangeAt(0);
       
-      setVideoData(prev => ({
-        ...prev,
-        mediaAssignments: [...prev.mediaAssignments, assignment]
-      }));
+      // Get the start and end positions in the full text
+      const fullText = videoData.script;
+      const startPos = fullText.indexOf(selectedText);
+      const endPos = startPos + selectedText.length;
+      
+      if (startPos >= 0) {
+        const assignment = {
+          id: Date.now(),
+          text: selectedText,
+          type, // 'slide', 'stock-video', 'upload'
+          content,
+          timestamp: Date.now(),
+          range: { start: startPos, end: endPos }
+        };
+        
+        setVideoData(prev => ({
+          ...prev,
+          mediaAssignments: [...prev.mediaAssignments, assignment]
+        }));
+        
+        // Add to highlighted ranges
+        setHighlightedRanges(prev => [...prev, { 
+          start: startPos, 
+          end: endPos, 
+          type, 
+          content,
+          id: assignment.id
+        }]);
+      }
       
       setShowMediaAssignment(false);
       setSelectedText('');
@@ -214,6 +248,71 @@ export function ProfessionalVideoModal({ isOpen, onClose }) {
     onClose();
   };
 
+  // Function to render the script with highlighted sections
+  const renderHighlightedScript = () => {
+    if (!videoData.script) return null;
+    
+    // Sort ranges by start position to ensure proper rendering
+    const sortedRanges = [...highlightedRanges].sort((a, b) => a.start - b.start);
+    
+    const result = [];
+    let lastEnd = 0;
+    
+    sortedRanges.forEach((range, index) => {
+      // Add text before this range
+      if (range.start > lastEnd) {
+        result.push(
+          <span key={`text-${index}`} className="text-gray-900">
+            {videoData.script.substring(lastEnd, range.start)}
+          </span>
+        );
+      }
+      
+      // Add the highlighted range
+      result.push(
+        <span 
+          key={`highlight-${range.id}`}
+          className={`${getHighlightColor(range.type)} cursor-pointer relative`}
+          onMouseEnter={() => setHoveredRange(range)}
+          onMouseLeave={() => setHoveredRange(null)}
+        >
+          {videoData.script.substring(range.start, range.end)}
+          
+          {/* Tooltip that appears on hover */}
+          {hoveredRange && hoveredRange.id === range.id && (
+            <div className="absolute z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-2 text-xs text-gray-700 w-48 -top-12 left-1/2 transform -translate-x-1/2">
+              <div className="font-medium mb-1 capitalize">{range.type.replace('-', ' ')}</div>
+              <div className="text-gray-600 truncate">{range.content}</div>
+            </div>
+          )}
+        </span>
+      );
+      
+      lastEnd = range.end;
+    });
+    
+    // Add any remaining text
+    if (lastEnd < videoData.script.length) {
+      result.push(
+        <span key="text-end" className="text-gray-900">
+          {videoData.script.substring(lastEnd)}
+        </span>
+      );
+    }
+    
+    return result;
+  };
+  
+  // Function to get highlight color based on media type
+  const getHighlightColor = (type) => {
+    switch (type) {
+      case 'slide': return 'bg-blue-100 text-blue-800';
+      case 'stock-video': return 'bg-purple-100 text-purple-800';
+      case 'upload': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
@@ -254,7 +353,7 @@ export function ProfessionalVideoModal({ isOpen, onClose }) {
             {/* Video Avatar Selection */}
             <div>
               <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center">
-                <Video className="w-5 h-5 mr-2 text-blue-600" />
+                <VideoIcon className="w-5 h-5 mr-2 text-blue-600" />
                 Choose Video Avatar
               </h4>
               
@@ -386,15 +485,29 @@ export function ProfessionalVideoModal({ isOpen, onClose }) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Video Script</label>
-                  <textarea
-                    ref={scriptEditorRef}
-                    value={videoData.script}
-                    onChange={(e) => setVideoData(prev => ({ ...prev, script: e.target.value }))}
-                    onMouseUp={handleTextSelection}
-                    rows={12}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
-                    placeholder="Type or paste your script here. Highlight text to assign media..."
-                  />
+                  <div className="relative">
+                    <textarea
+                      ref={scriptEditorRef}
+                      value={videoData.script}
+                      onChange={(e) => setVideoData(prev => ({ ...prev, script: e.target.value }))}
+                      onMouseUp={handleTextSelection}
+                      rows={12}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                      placeholder="Type or paste your script here. Highlight text to assign media..."
+                    />
+                    
+                    {/* Overlay for highlighted text */}
+                    {videoData.script && highlightedRanges.length > 0 && (
+                      <div className="absolute inset-0 pointer-events-none px-3 py-2 font-mono text-sm">
+                        <div className="relative">
+                          {renderHighlightedScript()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Highlight text to assign media elements. Assigned sections will be highlighted.
+                  </p>
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -424,25 +537,29 @@ export function ProfessionalVideoModal({ isOpen, onClose }) {
                   </div>
                 </div>
 
-                {/* Media Assignments Preview */}
+                {/* Media Assignments Summary */}
                 {videoData.mediaAssignments.length > 0 && (
                   <div>
                     <h4 className="text-md font-semibold text-gray-900 mb-3">Media Assignments</h4>
-                    <div className="space-y-2">
-                      {videoData.mediaAssignments.map((assignment) => (
-                        <div key={assignment.id} className="flex items-center p-3 bg-gray-50 rounded-lg">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">"{assignment.text}"</p>
-                            <p className="text-xs text-gray-600 capitalize">{assignment.type.replace('-', ' ')}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Layers className="w-4 h-4 text-gray-400" />
-                            <button className="text-red-600 hover:text-red-700">
-                              <X className="w-4 h-4" />
-                            </button>
-                          </div>
+                    <div className="p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-gray-900">Total Assignments</span>
+                        <span className="text-sm font-medium text-gray-900">{videoData.mediaAssignments.length}</span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="flex items-center space-x-1 text-xs text-gray-600">
+                          <div className="w-3 h-3 bg-blue-100 rounded-full"></div>
+                          <span>Slides: {videoData.mediaAssignments.filter(a => a.type === 'slide').length}</span>
                         </div>
-                      ))}
+                        <div className="flex items-center space-x-1 text-xs text-gray-600">
+                          <div className="w-3 h-3 bg-purple-100 rounded-full"></div>
+                          <span>Videos: {videoData.mediaAssignments.filter(a => a.type === 'stock-video').length}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-xs text-gray-600">
+                          <div className="w-3 h-3 bg-green-100 rounded-full"></div>
+                          <span>Uploads: {videoData.mediaAssignments.filter(a => a.type === 'upload').length}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -823,7 +940,7 @@ export function ProfessionalVideoModal({ isOpen, onClose }) {
               { step: 1, label: 'Setup', icon: Settings },
               { step: 2, label: 'Script', icon: FileText },
               { step: 3, label: 'Audio', icon: Mic },
-              { step: 4, label: 'Compile', icon: Video }
+              { step: 4, label: 'Compile', icon: VideoIcon }
             ].map(({ step, label, icon: Icon }) => (
               <div key={step} className="flex items-center">
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
