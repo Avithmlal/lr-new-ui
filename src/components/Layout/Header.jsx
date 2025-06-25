@@ -1,16 +1,24 @@
 import React, { useState } from 'react';
-import { Bell, Search, User, HelpCircle, Settings, Shield } from 'lucide-react';
+import { Bell, Search, User, HelpCircle, Settings, Shield, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp, isAdmin } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useGuidance } from '../../hooks/useGuidance';
 import { HintTooltip } from '../Guidance/HintTooltip';
 
 export function Header() {
   const { state } = useApp();
+  const { logout, user: authUser } = useAuth();
   const navigate = useNavigate();
   const { showTooltips, toggleTooltips, resetGuidance } = useGuidance();
   const [showGuidanceMenu, setShowGuidanceMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const unreadMessages = state.systemMessages.filter(msg => !msg.isRead).length;
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -96,14 +104,58 @@ export function Header() {
               </button>
             </HintTooltip>
             
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                <User className="w-4 h-4 text-white" />
-              </div>
-              <div className="hidden md:block">
-                <p className="text-sm font-medium text-gray-900">{state.currentUser.firstName} {state.currentUser.lastName}</p>
-                <p className="text-xs text-gray-500">{state.currentUser.email}</p>
-              </div>
+            <div className="relative">
+              <button 
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+              >
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-900">
+                    {state.currentUser.firstName} {state.currentUser.lastName}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {authUser?.email || state.currentUser.email}
+                  </p>
+                </div>
+              </button>
+
+              {showUserMenu && (
+                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-200">
+                    <p className="font-medium text-gray-900">
+                      {state.currentUser.firstName} {state.currentUser.lastName}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {authUser?.email || state.currentUser.email}
+                    </p>
+                  </div>
+                  <div className="p-2">
+                    <button
+                      onClick={() => {
+                        navigate('/settings');
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg flex items-center"
+                    >
+                      <Settings className="w-4 h-4 mr-2" />
+                      Settings
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleLogout();
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-sm text-red-700 hover:bg-red-50 rounded-lg flex items-center"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Log Out
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -18,6 +18,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useApp, hasPermission } from '../contexts/AppContext';
 import { Pagination } from '../components/Common/Pagination';
+import { getOrganizationsForUI } from '../api/organizationService';
 
 export function Organizations() {
   const { state, dispatch } = useApp();
@@ -27,6 +28,10 @@ export function Organizations() {
   const [planFilter, setPlanFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [organizationsPerPage] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [sortField, setSortField] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('DESC');
 
   // Check permissions
   const canViewOrganizations = hasPermission(state.currentUser, 'organizations', 'read');
@@ -52,22 +57,68 @@ export function Organizations() {
     }
   }, [canViewOrganizations, navigate, dispatch]);
 
-  // Filter organizations
+  // Fetch organizations from API
+  const fetchOrganizations = async () => {
+    try {
+      setLoading(true);
+      
+      const params = {
+        searchKey: searchTerm,
+        status: statusFilter === 'all' ? '' : (statusFilter === 'active' ? 'ACTIVE' : 'INACTIVE'),
+        limit: organizationsPerPage,
+        pageNo: currentPage,
+        sortField,
+        sortOrder
+      };
+
+      const response = await getOrganizationsForUI(params);
+      
+      // Update context with organizations data
+      dispatch({
+        type: 'SET_ORGANIZATIONS',
+        payload: response.data
+      });
+      
+      setTotalCount(response.info?.totalCount || 0);
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+      dispatch({
+        type: 'ADD_SYSTEM_MESSAGE',
+        payload: {
+          id: Date.now().toString(),
+          type: 'error',
+          title: 'Error',
+          message: 'Failed to fetch organizations. Please try again.',
+          timestamp: new Date(),
+          isRead: false,
+        }
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch organizations when filters change
+  useEffect(() => {
+    if (canViewOrganizations) {
+      // Debounce search
+      const timeoutId = setTimeout(() => {
+        fetchOrganizations();
+      }, searchTerm ? 500 : 0);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [searchTerm, statusFilter, currentPage, sortField, sortOrder, canViewOrganizations]);
+
+  // Filter organizations client-side for plan filter (since backend doesn't have plan filter)
   const filteredOrganizations = state.organizations.filter(org => {
-    const matchesSearch = org.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         org.domain.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'active' && org.isActive) ||
-                         (statusFilter === 'inactive' && !org.isActive);
     const matchesPlan = planFilter === 'all' || org.plan.type === planFilter;
-    
-    return matchesSearch && matchesStatus && matchesPlan;
+    return matchesPlan;
   });
 
   // Pagination
-  const totalPages = Math.ceil(filteredOrganizations.length / organizationsPerPage);
-  const startIndex = (currentPage - 1) * organizationsPerPage;
-  const paginatedOrganizations = filteredOrganizations.slice(startIndex, startIndex + organizationsPerPage);
+  const totalPages = Math.ceil(totalCount / organizationsPerPage);
+  const paginatedOrganizations = filteredOrganizations;
 
   const handleViewOrganization = (orgId) => {
     navigate(`/organizations/${orgId}`);
@@ -199,7 +250,7 @@ export function Organizations() {
           <div className="flex items-center space-x-2">
             <Filter className="w-4 h-4 text-gray-400" />
             <span className="text-sm text-gray-600">
-              {filteredOrganizations.length} of {state.organizations.length} organizations
+              {filteredOrganizations.length} of {totalCount} organizations
             </span>
           </div>
         </div>
@@ -235,8 +286,24 @@ export function Organizations() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {paginatedOrganizations.map((organization) => (
-                <tr key={organization.id} className="hover:bg-gray-50">
+              {loading ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-4 text-center">
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                      <span className="ml-2 text-gray-500">Loading organizations...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : paginatedOrganizations.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="px-6 py-4 text-center text-gray-500">
+                    No organizations found
+                  </td>
+                </tr>
+              ) : (
+                paginatedOrganizations.map((organization) => (
+                  <tr key={organization.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
@@ -305,7 +372,8 @@ export function Organizations() {
                     </div>
                   </td>
                 </tr>
-              ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -315,7 +383,7 @@ export function Organizations() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
           itemsPerPage={organizationsPerPage}
-          totalItems={filteredOrganizations.length}
+          totalItems={totalCount}
           className="p-4 border-t border-gray-200"
         />
       </div>

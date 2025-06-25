@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './contexts/AppContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { Layout } from './components/Layout/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { Projects } from './pages/Projects';
@@ -22,13 +23,35 @@ import { OrganizationDetail } from './pages/OrganizationDetail';
 import { Users } from './pages/Users';
 import { UserDetail } from './pages/UserDetail';
 import { Analytics } from './pages/Analytics';
+// Authentication components
+import { Login } from './pages/Login';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ProtectedRoute, PublicRoute } from './components/Auth/ProtectedRoute';
 
 function App() {
   return (
     <AppProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Layout />}>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={
+              <PublicRoute>
+                <Login />
+              </PublicRoute>
+            } />
+            <Route path="/forgot-password" element={
+              <PublicRoute>
+                <ForgotPassword />
+              </PublicRoute>
+            } />
+            
+            {/* Protected routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
             {/* User Routes */}
             <Route index element={<Dashboard />} />
             <Route path="projects" element={<Projects />} />
@@ -52,9 +75,10 @@ function App() {
             <Route path="users" element={<Users />} />
             <Route path="users/:userId" element={<UserDetail />} />
             <Route path="analytics" element={<Analytics />} />
-          </Route>
-        </Routes>
-      </Router>
+            </Route>
+          </Routes>
+        </Router>
+      </AuthProvider>
     </AppProvider>
   );
 }

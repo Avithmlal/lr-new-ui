@@ -1,34 +1,56 @@
+// Token management functions
+export const setToken = (accessToken, refreshToken) => {
+  if (accessToken) {
+    localStorage.setItem('accessToken', accessToken);
+  }
+  if (refreshToken) {
+    localStorage.setItem('refreshToken', refreshToken);
+  }
+};
+
+export const getAccessToken = () => {
+  return localStorage.getItem('accessToken');
+};
+
 export const getToken = () => {
-  return localStorage.getItem('token');
+  return localStorage.getItem('accessToken');
 };
 
-export const setToken = (token) => {
-  localStorage.setItem('token', token);
+export const getRefreshToken = () => {
+  return localStorage.getItem('refreshToken');
 };
 
-export const removeToken = () => {
-  localStorage.removeItem('token');
+export const removeTokens = () => {
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
 };
 
-export const getUser = () => {
-  const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
-};
-
-export const setUser = (user) => {
-  localStorage.setItem('user', JSON.stringify(user));
-};
-
-export const removeUser = () => {
-  localStorage.removeItem('user');
+export const isAuthenticated = () => {
+  return !!getAccessToken();
 };
 
 export const logout = () => {
-  removeToken();
-  removeUser();
+  removeTokens();
+  // Redirect to login page
   window.location.href = '/login';
 };
 
-export const clearStorage = () => {
-  localStorage.clear();
+// User preferences
+export const setUserPreferences = (preferences) => {
+  localStorage.setItem('userPreferences', JSON.stringify(preferences));
+};
+
+export const getUserPreferences = () => {
+  const preferences = localStorage.getItem('userPreferences');
+  return preferences ? JSON.parse(preferences) : null;
+};
+
+// App settings
+export const setAppSetting = (key, value) => {
+  localStorage.setItem(`app_${key}`, JSON.stringify(value));
+};
+
+export const getAppSetting = (key, defaultValue = null) => {
+  const setting = localStorage.getItem(`app_${key}`);
+  return setting ? JSON.parse(setting) : defaultValue;
 };
