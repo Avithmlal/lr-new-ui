@@ -16,33 +16,36 @@ import {
   Pause,
   RotateCcw,
   FastForward,
-  Volume2
+  Volume2,
+  Download,
+  Share2,
+  ExternalLink
 } from 'lucide-react';
 import { ScriptEditor } from './ScriptEditor';
 import { useApp } from '../../contexts/AppContext';
 
 // Avatar data for selection
 const AVATARS = [
-  { id: 'heygen-sarah', name: 'Sarah - Professional', provider: 'Heygen', style: 'Business Professional', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3785077/pexels-photo-3785077.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: 'heygen-mike', name: 'Mike - Casual', provider: 'Heygen', style: 'Casual Presenter', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: 'heygen-emma', name: 'Emma - Educational', provider: 'Heygen', style: 'Educational Expert', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3586798/pexels-photo-3586798.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: 'heygen-david', name: 'David - Executive', provider: 'Heygen', style: 'Executive Leader', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: 'akool-lisa', name: 'Lisa - Tech Expert', provider: 'Akool', style: 'Technology Specialist', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: 'akool-james', name: 'James - Creative', provider: 'Akool', style: 'Creative Director', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/3778876/pexels-photo-3778876.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: 'akool-anna', name: 'Anna - Consultant', provider: 'Akool', style: 'Business Consultant', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=150' },
-  { id: 'akool-robert', name: 'Robert - Trainer', provider: 'Akool', style: 'Corporate Trainer', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { id: 'heygen-sarah', name: 'Sarah - Professional', provider: 'Heygen', style: 'Business Professional', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3785077/pexels-photo-3785077.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/3785077/pexels-photo-3785077.jpeg?auto=compress&cs=tinysrgb&w=400' },
+  { id: 'heygen-mike', name: 'Mike - Casual', provider: 'Heygen', style: 'Casual Presenter', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=400' },
+  { id: 'heygen-emma', name: 'Emma - Educational', provider: 'Heygen', style: 'Educational Expert', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3586798/pexels-photo-3586798.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/3586798/pexels-photo-3586798.jpeg?auto=compress&cs=tinysrgb&w=400' },
+  { id: 'heygen-david', name: 'David - Executive', provider: 'Heygen', style: 'Executive Leader', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/2182970/pexels-photo-2182970.jpeg?auto=compress&cs=tinysrgb&w=400' },
+  { id: 'akool-lisa', name: 'Lisa - Tech Expert', provider: 'Akool', style: 'Technology Specialist', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&cs=tinysrgb&w=400' },
+  { id: 'akool-james', name: 'James - Creative', provider: 'Akool', style: 'Creative Director', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/3778876/pexels-photo-3778876.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/3778876/pexels-photo-3778876.jpeg?auto=compress&cs=tinysrgb&w=400' },
+  { id: 'akool-anna', name: 'Anna - Consultant', provider: 'Akool', style: 'Business Consultant', gender: 'Female', thumbnailUrl: 'https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=400' },
+  { id: 'akool-robert', name: 'Robert - Trainer', provider: 'Akool', style: 'Corporate Trainer', gender: 'Male', thumbnailUrl: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=150', previewUrl: 'https://images.pexels.com/photos/3760263/pexels-photo-3760263.jpeg?auto=compress&cs=tinysrgb&w=400' },
 ];
 
 // Voice data for selection
 const VOICES = [
-  { id: 'heygen-voice-1', name: 'Professional Female', provider: 'Heygen', gender: 'Female', accent: 'American', tone: 'Professional' },
-  { id: 'heygen-voice-2', name: 'Confident Male', provider: 'Heygen', gender: 'Male', accent: 'American', tone: 'Confident' },
-  { id: 'heygen-voice-3', name: 'Warm Female', provider: 'Heygen', gender: 'Female', accent: 'British', tone: 'Warm' },
-  { id: 'heygen-voice-4', name: 'Authoritative Male', provider: 'Heygen', gender: 'Male', accent: 'American', tone: 'Authoritative' },
-  { id: 'akool-voice-1', name: 'Friendly Female', provider: 'Akool', gender: 'Female', accent: 'American', tone: 'Friendly' },
-  { id: 'akool-voice-2', name: 'Dynamic Male', provider: 'Akool', gender: 'Male', accent: 'American', tone: 'Dynamic' },
-  { id: 'akool-voice-3', name: 'Elegant Female', provider: 'Akool', gender: 'Female', accent: 'British', tone: 'Elegant' },
-  { id: 'akool-voice-4', name: 'Persuasive Male', provider: 'Akool', gender: 'Male', accent: 'Australian', tone: 'Persuasive' },
+  { id: 'heygen-voice-1', name: 'Professional Female', provider: 'Heygen', gender: 'Female', accent: 'American', tone: 'Professional', previewUrl: 'https://example.com/audio/professional-female.mp3' },
+  { id: 'heygen-voice-2', name: 'Confident Male', provider: 'Heygen', gender: 'Male', accent: 'American', tone: 'Confident', previewUrl: 'https://example.com/audio/confident-male.mp3' },
+  { id: 'heygen-voice-3', name: 'Warm Female', provider: 'Heygen', gender: 'Female', accent: 'British', tone: 'Warm', previewUrl: 'https://example.com/audio/warm-female.mp3' },
+  { id: 'heygen-voice-4', name: 'Authoritative Male', provider: 'Heygen', gender: 'Male', accent: 'American', tone: 'Authoritative', previewUrl: 'https://example.com/audio/authoritative-male.mp3' },
+  { id: 'akool-voice-1', name: 'Friendly Female', provider: 'Akool', gender: 'Female', accent: 'American', tone: 'Friendly', previewUrl: 'https://example.com/audio/friendly-female.mp3' },
+  { id: 'akool-voice-2', name: 'Dynamic Male', provider: 'Akool', gender: 'Male', accent: 'American', tone: 'Dynamic', previewUrl: 'https://example.com/audio/dynamic-male.mp3' },
+  { id: 'akool-voice-3', name: 'Elegant Female', provider: 'Akool', gender: 'Female', accent: 'British', tone: 'Elegant', previewUrl: 'https://example.com/audio/elegant-female.mp3' },
+  { id: 'akool-voice-4', name: 'Persuasive Male', provider: 'Akool', gender: 'Male', accent: 'Australian', tone: 'Persuasive', previewUrl: 'https://example.com/audio/persuasive-male.mp3' },
 ];
 
 export function VideoEditorPage() {
@@ -55,6 +58,8 @@ export function VideoEditorPage() {
   const [selectedModel, setSelectedModel] = useState('heygen');
   const [selectedAvatar, setSelectedAvatar] = useState('');
   const [selectedVoice, setSelectedVoice] = useState('');
+  const [previewingAvatar, setPreviewingAvatar] = useState(null);
+  const [previewingVoice, setPreviewingVoice] = useState(null);
   const [script, setScript] = useState('');
   const [mediaAnnotations, setMediaAnnotations] = useState([]);
   const [audioSegments, setAudioSegments] = useState([]);
@@ -64,6 +69,8 @@ export function VideoEditorPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
+  const [finalVideo, setFinalVideo] = useState(null);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   useEffect(() => {
     // Find the video in the state
@@ -82,6 +89,17 @@ export function VideoEditorPage() {
       }
       if (video.mediaAnnotations) {
         setMediaAnnotations(video.mediaAnnotations);
+      }
+      
+      // If video is already completed, show the final step with the video
+      if (video.status === 'completed' && video.videoUrl) {
+        setCurrentStep(4);
+        setFinalVideo({
+          url: video.videoUrl,
+          thumbnailUrl: video.thumbnailUrl,
+          title: video.title,
+          duration: video.duration
+        });
       }
     } else {
       // If video not found, redirect to videos page
@@ -201,13 +219,23 @@ export function VideoEditorPage() {
       setGenerationProgress(i);
     }
     
+    // Create final video object
+    const finalVideoObj = {
+      url: 'https://example.com/video.mp4', // In a real app, this would be the actual video URL
+      thumbnailUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
+      title: videoData.title,
+      duration: Math.floor(Math.random() * 600) + 300 // Random duration between 5-15 minutes
+    };
+    
+    setFinalVideo(finalVideoObj);
+    
     // Update video status to completed
     const completedVideo = {
       ...videoData,
       status: 'completed',
-      duration: Math.floor(Math.random() * 600) + 300, // Random duration between 5-15 minutes
-      thumbnailUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
-      videoUrl: '#video-url',
+      duration: finalVideoObj.duration,
+      thumbnailUrl: finalVideoObj.thumbnailUrl,
+      videoUrl: finalVideoObj.url,
       updatedAt: new Date()
     };
     
@@ -226,10 +254,7 @@ export function VideoEditorPage() {
       }
     });
     
-    // Navigate back to videos page
-    setTimeout(() => {
-      navigate('/videos');
-    }, 1500);
+    setIsGenerating(false);
   };
 
   const getFilteredAvatars = () => {
@@ -251,6 +276,25 @@ export function VideoEditorPage() {
       default:
         return true;
     }
+  };
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return '0:00';
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  const handlePreviewAvatar = (avatar) => {
+    setPreviewingAvatar(avatar);
+  };
+
+  const handlePreviewVoice = (voice) => {
+    setPreviewingVoice(voice);
+    // Simulate playing voice sample
+    setTimeout(() => {
+      setPreviewingVoice(null);
+    }, 3000);
   };
 
   if (!videoData) {
@@ -395,24 +439,182 @@ export function VideoEditorPage() {
               </div>
             </div>
 
+            {/* Avatar Preview Modal */}
+            {previewingAvatar && (
+              <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full">
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">{previewingAvatar.name} Preview</h3>
+                    <button
+                      onClick={() => setPreviewingAvatar(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="p-6">
+                    <div className="aspect-video bg-gray-100 rounded-lg overflow-hidden mb-4">
+                      <img 
+                        src={previewingAvatar.previewUrl} 
+                        alt={previewingAvatar.name}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <button className="bg-white bg-opacity-90 rounded-full p-4 shadow-lg">
+                          <Play className="w-8 h-8 text-gray-800" />
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Provider</p>
+                        <p className="text-gray-900">{previewingAvatar.provider}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Style</p>
+                        <p className="text-gray-900">{previewingAvatar.style}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Gender</p>
+                        <p className="text-gray-900">{previewingAvatar.gender}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Best For</p>
+                        <p className="text-gray-900">
+                          {previewingAvatar.style.includes('Professional') ? 'Corporate Videos' : 
+                           previewingAvatar.style.includes('Educational') ? 'Training Content' : 
+                           'Casual Presentations'}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => setPreviewingAvatar(null)}
+                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedAvatar(previewingAvatar.id);
+                          setPreviewingAvatar(null);
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        Select This Avatar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Voice Preview Modal */}
+            {previewingVoice && (
+              <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+                  <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">{previewingVoice.name} Preview</h3>
+                    <button
+                      onClick={() => setPreviewingVoice(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
+                  <div className="p-6">
+                    <div className="bg-gray-50 p-4 rounded-lg mb-4 flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-gray-900">{previewingVoice.name}</p>
+                        <p className="text-sm text-gray-600">{previewingVoice.accent} • {previewingVoice.tone}</p>
+                      </div>
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center animate-pulse">
+                          <Volume2 className="w-6 h-6 text-green-600" />
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full"></div>
+                      </div>
+                    </div>
+                    
+                    <p className="text-sm text-gray-600 mb-4">
+                      Currently playing a sample of this voice. This voice is perfect for {previewingVoice.tone.toLowerCase()} content with a {previewingVoice.accent} accent.
+                    </p>
+                    
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Provider</p>
+                        <p className="text-gray-900">{previewingVoice.provider}</p>
+                      </div>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm font-medium text-gray-700">Gender</p>
+                        <p className="text-gray-900">{previewingVoice.gender}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => setPreviewingVoice(null)}
+                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                      >
+                        Close
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedVoice(previewingVoice.id);
+                          setPreviewingVoice(null);
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      >
+                        Select This Voice
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Select Video Avatar</h2>
               <div className="grid grid-cols-4 gap-4">
                 {getFilteredAvatars().map((avatar) => (
                   <div
                     key={avatar.id}
-                    onClick={() => setSelectedAvatar(avatar.id)}
                     className={`border-2 rounded-lg cursor-pointer transition-all overflow-hidden ${
                       selectedAvatar === avatar.id
                         ? 'border-blue-500 ring-2 ring-blue-200'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <img
-                      src={avatar.thumbnailUrl}
-                      alt={avatar.name}
-                      className="w-full h-32 object-cover"
-                    />
+                    <div className="relative">
+                      <img
+                        src={avatar.thumbnailUrl}
+                        alt={avatar.name}
+                        className="w-full h-32 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all flex items-center justify-center">
+                        <div className="flex space-x-2 opacity-0 hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handlePreviewAvatar(avatar);
+                            }}
+                            className="p-2 bg-white rounded-full shadow-lg"
+                          >
+                            <Play className="w-4 h-4 text-gray-800" />
+                          </button>
+                          <button
+                            onClick={() => setSelectedAvatar(avatar.id)}
+                            className="p-2 bg-blue-600 rounded-full shadow-lg"
+                          >
+                            <Check className="w-4 h-4 text-white" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                     <div className="p-3">
                       <p className="font-medium text-gray-900 text-sm">{avatar.name}</p>
                       <p className="text-xs text-gray-600">{avatar.style}</p>
@@ -428,7 +630,6 @@ export function VideoEditorPage() {
                 {getFilteredVoices().map((voice) => (
                   <div
                     key={voice.id}
-                    onClick={() => setSelectedVoice(voice.id)}
                     className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                       selectedVoice === voice.id
                         ? 'border-green-500 bg-green-50'
@@ -440,8 +641,26 @@ export function VideoEditorPage() {
                         <p className="font-medium text-gray-900">{voice.name}</p>
                         <p className="text-sm text-gray-600">{voice.accent} • {voice.tone}</p>
                       </div>
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <Mic className="w-4 h-4 text-green-600" />
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePreviewVoice(voice);
+                          }}
+                          className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
+                        >
+                          <Volume2 className="w-4 h-4 text-gray-700" />
+                        </button>
+                        <button
+                          onClick={() => setSelectedVoice(voice.id)}
+                          className={`p-2 rounded-full ${
+                            selectedVoice === voice.id
+                              ? 'bg-green-600 text-white'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <Check className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -680,6 +899,142 @@ export function VideoEditorPage() {
                   </div>
                 </div>
               </div>
+            ) : finalVideo ? (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Your Video is Ready!</h2>
+                
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 flex items-center">
+                  <Check className="w-5 h-5 text-green-600 mr-2" />
+                  <p className="text-green-800">
+                    Your video has been successfully generated and is ready to view.
+                  </p>
+                </div>
+                
+                {/* Video Player */}
+                <div className="mb-6">
+                  <div className="relative aspect-video bg-black rounded-lg overflow-hidden">
+                    <img 
+                      src={finalVideo.thumbnailUrl} 
+                      alt={finalVideo.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <button 
+                        onClick={() => setIsVideoPlaying(!isVideoPlaying)}
+                        className="bg-white bg-opacity-90 hover:bg-opacity-100 rounded-full p-6 shadow-lg transition-transform transform hover:scale-105"
+                      >
+                        {isVideoPlaying ? (
+                          <Pause className="w-8 h-8 text-gray-900" />
+                        ) : (
+                          <Play className="w-8 h-8 text-gray-900" />
+                        )}
+                      </button>
+                    </div>
+                    
+                    {/* Video Controls */}
+                    <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black to-transparent p-4">
+                      <div className="flex items-center justify-between text-white">
+                        <div className="flex items-center space-x-3">
+                          <button className="p-1 hover:text-blue-300 transition-colors">
+                            {isVideoPlaying ? (
+                              <Pause className="w-5 h-5" />
+                            ) : (
+                              <Play className="w-5 h-5" />
+                            )}
+                          </button>
+                          <span className="text-sm">{formatDuration(isVideoPlaying ? 45 : 0)} / {formatDuration(finalVideo.duration)}</span>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <button className="p-1 hover:text-blue-300 transition-colors">
+                            <Volume2 className="w-5 h-5" />
+                          </button>
+                          <button className="p-1 hover:text-blue-300 transition-colors">
+                            <ExternalLink className="w-5 h-5" />
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="mt-2 w-full bg-gray-600 rounded-full h-1">
+                        <div 
+                          className="bg-blue-500 h-1 rounded-full"
+                          style={{ width: isVideoPlaying ? '15%' : '0%' }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Video Details */}
+                <div className="grid grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-gray-900 mb-2">Video Details</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Title:</span>
+                        <span className="font-medium text-gray-900">{finalVideo.title}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Duration:</span>
+                        <span className="font-medium text-gray-900">{formatDuration(finalVideo.duration)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Avatar:</span>
+                        <span className="font-medium text-gray-900">{AVATARS.find(a => a.id === selectedAvatar)?.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Voice:</span>
+                        <span className="font-medium text-gray-900">{VOICES.find(v => v.id === selectedVoice)?.name}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gray-50 p-4 rounded-lg">
+                    <h3 className="font-medium text-gray-900 mb-2">Media Stats</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Resolution:</span>
+                        <span className="font-medium text-gray-900">1080p HD</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Format:</span>
+                        <span className="font-medium text-gray-900">MP4</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Size:</span>
+                        <span className="font-medium text-gray-900">{Math.floor(Math.random() * 100) + 50} MB</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Media Annotations:</span>
+                        <span className="font-medium text-gray-900">{mediaAnnotations.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="flex flex-wrap gap-3">
+                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center">
+                    <Play className="w-4 h-4 mr-2" />
+                    Watch Full Screen
+                  </button>
+                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center">
+                    <Download className="w-4 h-4 mr-2" />
+                    Download Video
+                  </button>
+                  <button className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center">
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share Video
+                  </button>
+                  <button 
+                    onClick={handleClose}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Videos
+                  </button>
+                </div>
+              </div>
             ) : (
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-lg font-semibold text-gray-900 mb-4">Ready to Generate</h2>
@@ -748,30 +1103,32 @@ export function VideoEditorPage() {
         )}
 
         {/* Navigation Buttons */}
-        <div className="flex justify-between mt-6">
-          {currentStep > 1 ? (
-            <button
-              onClick={() => setCurrentStep(currentStep - 1)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center"
-            >
-              <ChevronLeft className="w-4 h-4 mr-2" />
-              Previous Step
-            </button>
-          ) : (
-            <div></div> // Empty div to maintain flex spacing
-          )}
-          
-          {currentStep < 4 && (
-            <button
-              onClick={() => setCurrentStep(currentStep + 1)}
-              disabled={!canProceedToNext()}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next Step
-              <ChevronRight className="w-4 h-4 ml-2" />
-            </button>
-          )}
-        </div>
+        {!finalVideo && (
+          <div className="flex justify-between mt-6">
+            {currentStep > 1 ? (
+              <button
+                onClick={() => setCurrentStep(currentStep - 1)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center"
+              >
+                <ChevronLeft className="w-4 h-4 mr-2" />
+                Previous Step
+              </button>
+            ) : (
+              <div></div> // Empty div to maintain flex spacing
+            )}
+            
+            {currentStep < 4 && (
+              <button
+                onClick={() => setCurrentStep(currentStep + 1)}
+                disabled={!canProceedToNext()}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next Step
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </button>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );
