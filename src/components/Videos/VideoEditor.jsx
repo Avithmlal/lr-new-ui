@@ -31,6 +31,23 @@ const AKOOL_VOICES = [
   { id: 'akool-voice-4', name: 'Persuasive Male', provider: 'Akool', gender: 'Male', accent: 'Australian', tone: 'Persuasive' },
 ];
 
+// Stock video categories for search
+const STOCK_VIDEO_CATEGORIES = [
+  "Business", "Technology", "Education", "Nature", "People", 
+  "Abstract", "City", "Office", "Medical", "Science",
+  "Sports", "Travel", "Food", "Animals", "Background"
+];
+
+// Mock stock videos for selection
+const MOCK_STOCK_VIDEOS = [
+  { id: 'stock-1', title: 'Business Meeting', category: 'Business', thumbnail: 'https://images.pexels.com/photos/3183150/pexels-photo-3183150.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { id: 'stock-2', title: 'Typing on Laptop', category: 'Technology', thumbnail: 'https://images.pexels.com/photos/1181675/pexels-photo-1181675.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { id: 'stock-3', title: 'Classroom Learning', category: 'Education', thumbnail: 'https://images.pexels.com/photos/256417/pexels-photo-256417.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { id: 'stock-4', title: 'Mountain Landscape', category: 'Nature', thumbnail: 'https://images.pexels.com/photos/1287145/pexels-photo-1287145.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { id: 'stock-5', title: 'Team Collaboration', category: 'Business', thumbnail: 'https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=150' },
+  { id: 'stock-6', title: 'Digital Interface', category: 'Technology', thumbnail: 'https://images.pexels.com/photos/1714208/pexels-photo-1714208.jpeg?auto=compress&cs=tinysrgb&w=150' },
+];
+
 export function VideoEditor({ isOpen, onClose, videoData }) {
   const { state, dispatch } = useApp();
   const [currentStep, setCurrentStep] = useState(1);
@@ -54,12 +71,20 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
 
   const scriptEditorRef = useRef(null);
   const [selectedText, setSelectedText] = useState('');
+  const [selectionRange, setSelectionRange] = useState(null);
   const [showMediaAssignment, setShowMediaAssignment] = useState(false);
+  const [showMediaAssignmentPosition, setShowMediaAssignmentPosition] = useState({ x: 0, y: 0 });
   const [audioPreviewSegments, setAudioPreviewSegments] = useState([]);
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [currentPlayingSegment, setCurrentPlayingSegment] = useState(null);
   const [highlightedRanges, setHighlightedRanges] = useState([]);
   const [hoveredRange, setHoveredRange] = useState(null);
+  const [stockVideoKeywords, setStockVideoKeywords] = useState('');
+  const [stockVideoResults, setStockVideoResults] = useState([]);
+  const [selectedStockVideo, setSelectedStockVideo] = useState(null);
+  const [uploadedPPT, setUploadedPPT] = useState(null);
+  const [pptSlides, setPptSlides] = useState([]);
+  const [selectedSlide, setSelectedSlide] = useState(null);
 
   // Auto-split script into segments
   useEffect(() => {
@@ -87,6 +112,7 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
   const handleTextSelection = () => {
     const selection = window.getSelection();
     const text = selection.toString();
+    
     if (text.length > 0) {
       setSelectedText(text);
       
@@ -96,7 +122,42 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
       const endOffset = range.endOffset;
       
       // Store the selection range for highlighting
-      setShowMediaAssignment(true);
+      setSelectionRange({ start: startOffset, end: endOffset });
+      
+      // Get position for the media assignment popup
+      const rect = range.getBoundingClientRect();
+      const editorRect = scriptEditorRef.current.getBoundingClientRect();
+      
+      setShowMediaAssignmentPosition({
+        x: rect.left + rect.width / 2 - editorRect.left,
+        y: rect.bottom - editorRect.top + 10
+      });
+      
+      // Check if selection overlaps with existing highlights
+      const fullText = videoInfo.script;
+      const selectionStart = fullText.indexOf(text);
+      const selectionEnd = selectionStart + text.length;
+      
+      const hasOverlap = highlightedRanges.some(range => {
+        return (selectionStart < range.end && selectionEnd > range.start);
+      });
+      
+      if (!hasOverlap) {
+        setShowMediaAssignment(true);
+      } else {
+        // Show warning about overlapping highlights
+        dispatch({
+          type: 'ADD_SYSTEM_MESSAGE',
+          payload: {
+            id: Date.now().toString(),
+            type: 'warning',
+            title: 'Overlapping Selection',
+            message: 'This text overlaps with an existing media assignment. Please remove the existing assignment first.',
+            timestamp: new Date(),
+            isRead: false,
+          }
+        });
+      }
     }
   };
 
@@ -137,7 +198,62 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
       
       setShowMediaAssignment(false);
       setSelectedText('');
+      setSelectionRange(null);
+      setStockVideoKeywords('');
+      setStockVideoResults([]);
+      setSelectedStockVideo(null);
+      setSelectedSlide(null);
     }
+  };
+
+  const removeHighlight = (highlightId) => {
+    setHighlightedRanges(prev => prev.filter(range => range.id !== highlightId));
+    setVideoInfo(prev => ({
+      ...prev,
+      mediaAssignments: prev.mediaAssignments.filter(assignment => assignment.id !== highlightId)
+    }));
+  };
+
+  const searchStockVideos = (keywords) => {
+    // In a real app, this would call an API to search for stock videos
+    // For now, we'll just filter our mock data based on keywords
+    const results = MOCK_STOCK_VIDEOS.filter(video => 
+      video.title.toLowerCase().includes(keywords.toLowerCase()) ||
+      video.category.toLowerCase().includes(keywords.toLowerCase())
+    );
+    
+    setStockVideoResults(results);
+  };
+
+  const handleUploadPPT = () => {
+    // Simulate PPT upload and slide extraction
+    setUploadedPPT({
+      name: 'presentation.pptx',
+      size: '2.4 MB',
+      slides: 12
+    });
+    
+    // Generate mock slides
+    const mockSlides = Array.from({ length: 12 }, (_, i) => ({
+      id: `slide-${i+1}`,
+      number: i+1,
+      title: `Slide ${i+1}`,
+      thumbnail: `https://images.pexels.com/photos/${3183150 + i}/pexels-photo-${3183150 + i}.jpeg?auto=compress&cs=tinysrgb&w=150`
+    }));
+    
+    setPptSlides(mockSlides);
+    
+    dispatch({
+      type: 'ADD_SYSTEM_MESSAGE',
+      payload: {
+        id: Date.now().toString(),
+        type: 'success',
+        title: 'Presentation Uploaded',
+        message: 'Your PowerPoint presentation has been uploaded successfully. You can now assign slides to your script.',
+        timestamp: new Date(),
+        isRead: false,
+      }
+    });
   };
 
   const generatePreviewAudio = async () => {
@@ -272,6 +388,7 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
           className={`${getHighlightColor(range.type)} cursor-pointer relative`}
           onMouseEnter={() => setHoveredRange(range)}
           onMouseLeave={() => setHoveredRange(null)}
+          onClick={() => handleHighlightClick(range)}
         >
           {videoInfo.script.substring(range.start, range.end)}
           
@@ -280,6 +397,15 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
             <div className="absolute z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-2 text-xs text-gray-700 w-48 -top-12 left-1/2 transform -translate-x-1/2">
               <div className="font-medium mb-1 capitalize">{range.type.replace('-', ' ')}</div>
               <div className="text-gray-600 truncate">{range.content}</div>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeHighlight(range.id);
+                }}
+                className="mt-1 text-red-600 hover:text-red-800 text-xs"
+              >
+                Remove
+              </button>
             </div>
           )}
         </span>
@@ -300,6 +426,50 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
     return result;
   };
   
+  // Function to handle clicking on a highlighted section
+  const handleHighlightClick = (range) => {
+    // Show preview of the assigned content
+    const assignment = videoInfo.mediaAssignments.find(a => a.id === range.id);
+    if (assignment) {
+      if (assignment.type === 'slide' && pptSlides.length > 0) {
+        // Find the slide by number or ID
+        const slideNumber = parseInt(assignment.content.match(/\d+/)?.[0] || '1');
+        const slide = pptSlides.find(s => s.number === slideNumber);
+        if (slide) {
+          setSelectedSlide(slide);
+          dispatch({
+            type: 'ADD_SYSTEM_MESSAGE',
+            payload: {
+              id: Date.now().toString(),
+              type: 'info',
+              title: 'Slide Preview',
+              message: `Showing slide ${slideNumber} from your presentation.`,
+              timestamp: new Date(),
+              isRead: false,
+            }
+          });
+        }
+      } else if (assignment.type === 'stock-video') {
+        // Find the stock video
+        const stockVideo = MOCK_STOCK_VIDEOS.find(v => v.title === assignment.content);
+        if (stockVideo) {
+          setSelectedStockVideo(stockVideo);
+          dispatch({
+            type: 'ADD_SYSTEM_MESSAGE',
+            payload: {
+              id: Date.now().toString(),
+              type: 'info',
+              title: 'Stock Video Preview',
+              message: `Showing preview of "${stockVideo.title}" stock video.`,
+              timestamp: new Date(),
+              isRead: false,
+            }
+          });
+        }
+      }
+    }
+  };
+  
   // Function to get highlight color based on media type
   const getHighlightColor = (type) => {
     switch (type) {
@@ -308,6 +478,21 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
       case 'upload': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Get selected avatar and voice information
+  const getSelectedAvatar = () => {
+    if (!videoInfo.videoAvatar) return null;
+    
+    const allAvatars = videoModel === 'heygen' ? HEYGEN_AVATARS : AKOOL_AVATARS;
+    return allAvatars.find(avatar => avatar.id === videoInfo.videoAvatar);
+  };
+  
+  const getSelectedVoice = () => {
+    if (!videoInfo.audioAvatar) return null;
+    
+    const allVoices = videoModel === 'heygen' ? HEYGEN_VOICES : AKOOL_VOICES;
+    return allVoices.find(voice => voice.id === videoInfo.audioAvatar);
   };
 
   if (!isOpen) return null;
@@ -320,7 +505,25 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
             <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900">Create Professional Video</h2>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Create Professional Video</h2>
+              {currentStep > 1 && (
+                <div className="flex items-center text-sm text-gray-600 mt-1">
+                  {getSelectedAvatar() && (
+                    <div className="flex items-center mr-3">
+                      <span className="font-medium">Avatar:</span>
+                      <span className="ml-1">{getSelectedAvatar()?.name}</span>
+                    </div>
+                  )}
+                  {getSelectedVoice() && (
+                    <div className="flex items-center">
+                      <span className="font-medium">Voice:</span>
+                      <span className="ml-1">{getSelectedVoice()?.name}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -524,6 +727,35 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Script Editor</h3>
               
               <div className="space-y-4">
+                {/* PPT Upload Section */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium text-blue-900">PowerPoint Presentation</h4>
+                    <button
+                      onClick={handleUploadPPT}
+                      className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      {uploadedPPT ? 'Change Presentation' : 'Upload Presentation'}
+                    </button>
+                  </div>
+                  
+                  {uploadedPPT ? (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <FileText className="w-5 h-5 text-blue-600 mr-2" />
+                        <div>
+                          <p className="text-sm font-medium text-blue-900">{uploadedPPT.name}</p>
+                          <p className="text-xs text-blue-700">{uploadedPPT.slides} slides • {uploadedPPT.size}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-blue-800">
+                      Upload a PowerPoint presentation to assign slides to your script. Only one presentation can be used per video.
+                    </p>
+                  )}
+                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Video Script</label>
                   <div className="relative">
@@ -545,37 +777,172 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
                         </div>
                       </div>
                     )}
+                    
+                    {/* Media Assignment Popup that appears at cursor position */}
+                    {showMediaAssignment && (
+                      <div 
+                        className="absolute z-10 bg-white border border-gray-200 rounded-lg shadow-lg p-3 w-64"
+                        style={{ 
+                          left: `${showMediaAssignmentPosition.x}px`, 
+                          top: `${showMediaAssignmentPosition.y}px`,
+                          transform: 'translateX(-50%)'
+                        }}
+                      >
+                        <div className="text-sm font-medium text-gray-900 mb-2">
+                          Assign media to: "{selectedText.length > 30 ? selectedText.substring(0, 30) + '...' : selectedText}"
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {/* Slide Assignment */}
+                          {uploadedPPT ? (
+                            <div>
+                              <div className="flex items-center justify-between mb-2">
+                                <button
+                                  onClick={() => {
+                                    // Show slide selection
+                                    setSelectedSlide(pptSlides[0]);
+                                  }}
+                                  className="w-full flex items-center p-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors"
+                                >
+                                  <PresentationChart className="w-4 h-4 mr-2" />
+                                  <span>Assign Slide</span>
+                                </button>
+                              </div>
+                              
+                              {selectedSlide && (
+                                <div className="p-2 bg-gray-50 rounded-lg mb-2">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <img 
+                                      src={selectedSlide.thumbnail} 
+                                      alt={`Slide ${selectedSlide.number}`}
+                                      className="w-12 h-12 object-cover rounded"
+                                    />
+                                    <div>
+                                      <p className="text-xs font-medium">Slide {selectedSlide.number}</p>
+                                      <div className="flex space-x-1 mt-1">
+                                        {pptSlides.slice(0, 5).map(slide => (
+                                          <button 
+                                            key={slide.id}
+                                            onClick={() => setSelectedSlide(slide)}
+                                            className={`w-5 h-5 rounded-full text-xs flex items-center justify-center ${
+                                              selectedSlide.id === slide.id 
+                                                ? 'bg-blue-600 text-white' 
+                                                : 'bg-gray-200 text-gray-700'
+                                            }`}
+                                          >
+                                            {slide.number}
+                                          </button>
+                                        ))}
+                                        {pptSlides.length > 5 && <span className="text-xs">...</span>}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <button
+                                    onClick={() => assignMedia('slide', `Slide ${selectedSlide.number}`)}
+                                    className="w-full px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                                  >
+                                    Confirm Slide {selectedSlide.number}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={handleUploadPPT}
+                              className="w-full flex items-center p-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-colors"
+                            >
+                              <PresentationChart className="w-4 h-4 mr-2" />
+                              <span>Upload PPT First</span>
+                            </button>
+                          )}
+                          
+                          {/* Stock Video Assignment */}
+                          <div>
+                            <button
+                              onClick={() => {
+                                // Show stock video search
+                                setStockVideoResults(MOCK_STOCK_VIDEOS.slice(0, 3));
+                              }}
+                              className="w-full flex items-center p-2 bg-purple-100 text-purple-800 rounded-lg hover:bg-purple-200 transition-colors"
+                            >
+                              <VideoIcon className="w-4 h-4 mr-2" />
+                              <span>Assign Stock Video</span>
+                            </button>
+                            
+                            {stockVideoResults.length > 0 && (
+                              <div className="mt-2 p-2 bg-gray-50 rounded-lg">
+                                <div className="mb-2">
+                                  <input
+                                    type="text"
+                                    value={stockVideoKeywords}
+                                    onChange={(e) => setStockVideoKeywords(e.target.value)}
+                                    placeholder="Search keywords..."
+                                    className="w-full px-2 py-1 text-xs border border-gray-300 rounded"
+                                  />
+                                  <button
+                                    onClick={() => searchStockVideos(stockVideoKeywords)}
+                                    className="w-full mt-1 px-2 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
+                                  >
+                                    Search
+                                  </button>
+                                </div>
+                                
+                                <div className="space-y-2 max-h-32 overflow-y-auto">
+                                  {stockVideoResults.map(video => (
+                                    <div 
+                                      key={video.id}
+                                      onClick={() => setSelectedStockVideo(video)}
+                                      className={`flex items-center p-1 rounded cursor-pointer ${
+                                        selectedStockVideo?.id === video.id ? 'bg-purple-100' : 'hover:bg-gray-100'
+                                      }`}
+                                    >
+                                      <img 
+                                        src={video.thumbnail} 
+                                        alt={video.title}
+                                        className="w-10 h-10 object-cover rounded mr-2"
+                                      />
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-medium truncate">{video.title}</p>
+                                        <p className="text-xs text-gray-500">{video.category}</p>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                                
+                                {selectedStockVideo && (
+                                  <button
+                                    onClick={() => assignMedia('stock-video', selectedStockVideo.title)}
+                                    className="w-full mt-2 px-2 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700"
+                                  >
+                                    Confirm "{selectedStockVideo.title}"
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Custom Upload */}
+                          <button
+                            onClick={() => assignMedia('upload', 'Custom upload')}
+                            className="w-full flex items-center p-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-colors"
+                          >
+                            <Upload className="w-4 h-4 mr-2" />
+                            <span>Upload Custom Media</span>
+                          </button>
+                        </div>
+                        
+                        <button
+                          onClick={() => setShowMediaAssignment(false)}
+                          className="w-full mt-2 px-2 py-1 text-xs text-gray-600 hover:text-gray-800"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    )}
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    Highlight text to assign media elements. Assigned sections will be highlighted.
+                    Highlight text to assign media elements. Assigned sections will be highlighted with different colors.
                   </p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-900 mb-2">Media Assignment Options</h4>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button
-                      onClick={() => selectedText && setShowMediaAssignment(true)}
-                      className="flex items-center p-3 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      <PresentationChart className="w-5 h-5 text-blue-600 mr-2" />
-                      <span className="text-sm font-medium">Assign Slides</span>
-                    </button>
-                    <button
-                      onClick={() => selectedText && setShowMediaAssignment(true)}
-                      className="flex items-center p-3 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      <VideoIcon className="w-5 h-5 text-blue-600 mr-2" />
-                      <span className="text-sm font-medium">Stock Video</span>
-                    </button>
-                    <button
-                      onClick={() => selectedText && setShowMediaAssignment(true)}
-                      className="flex items-center p-3 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors"
-                    >
-                      <Upload className="w-5 h-5 text-blue-600 mr-2" />
-                      <span className="text-sm font-medium">Upload Media</span>
-                    </button>
-                  </div>
                 </div>
 
                 {/* Media Assignments Summary */}
@@ -605,49 +972,6 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
                   </div>
                 )}
               </div>
-
-              {/* Media Assignment Modal */}
-              {showMediaAssignment && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                  <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Assign Media</h4>
-                    <p className="text-sm text-gray-600 mb-4">Selected text: "{selectedText}"</p>
-                    
-                    <div className="space-y-3">
-                      <button
-                        onClick={() => assignMedia('slide', 'PowerPoint slide')}
-                        className="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                      >
-                        <PresentationChart className="w-5 h-5 text-blue-600 mr-3" />
-                        <span>Assign PowerPoint Slide</span>
-                      </button>
-                      <button
-                        onClick={() => assignMedia('stock-video', 'Stock video footage')}
-                        className="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                      >
-                        <VideoIcon className="w-5 h-5 text-purple-600 mr-3" />
-                        <span>Assign Stock Video</span>
-                      </button>
-                      <button
-                        onClick={() => assignMedia('upload', 'Custom upload')}
-                        className="w-full flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
-                      >
-                        <Upload className="w-5 h-5 text-green-600 mr-3" />
-                        <span>Upload Custom Media</span>
-                      </button>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3 mt-6">
-                      <button
-                        onClick={() => setShowMediaAssignment(false)}
-                        className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div className="flex justify-between space-x-3 pt-4">
                 <button
@@ -744,7 +1068,7 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
                   >
                     {isGeneratingAudio ? (
                       <>
-                        <Loader className="w-4 h-4 mr-2 animate-spin inline" />
+                        <Loader className="w-4 h-4 mr-2 inline animate-spin" />
                         Generating...
                       </>
                     ) : (
@@ -798,7 +1122,7 @@ export function VideoEditor({ isOpen, onClose, videoData }) {
                     >
                       {isGeneratingAudio ? (
                         <>
-                          <Loader className="w-4 h-4 mr-2 animate-spin inline" />
+                          <Loader className="w-4 h-4 mr-2 inline animate-spin" />
                           Generating All...
                         </>
                       ) : (
