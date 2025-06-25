@@ -18,64 +18,48 @@ export function CreateVideoModal({ isOpen, onClose }) {
     
     if (!formData.title || !formData.type) return;
     
-    if (formData.type === 'basic') {
-      // Create a video object in the backend first
-      const newVideo = {
-        id: Date.now().toString(),
-        title: formData.title,
-        description: 'AI-generated video with avatar and voice synthesis',
-        type: 'basic',
-        projectId: formData.projectId || state.projects[0]?.id || '',
-        projectTitle: formData.projectId 
-          ? state.projects.find(p => p.id === formData.projectId)?.title 
-          : state.projects[0]?.title || 'Unknown Project',
-        status: 'draft',
-        duration: 0,
-        thumbnailUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
-        videoUrl: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        views: 0,
-        creator: {
-          name: 'Current User',
-          email: 'user@example.com',
-          avatar: ''
-        },
-        metadata: {
-          resolution: '1080p',
-          format: 'mp4',
-          size: null,
-          avatar: '',
-          voice: '',
-          language: 'English',
-          style: 'professional',
-          includeSubtitles: true,
-          backgroundMusic: false
-        }
-      };
-      
-      dispatch({ type: 'ADD_VIDEO', payload: newVideo });
-      
-      // Close the modal and navigate to the editor page
-      onClose();
-      
-      // Navigate to the video editor page with the video ID
-      navigate(`/videos/editor/${newVideo.id}`);
-    } else {
-      // For template based, we'll implement this later
-      dispatch({
-        type: 'ADD_SYSTEM_MESSAGE',
-        payload: {
-          id: Date.now().toString(),
-          type: 'info',
-          title: 'Template Based Video',
-          message: 'Template based video creation is coming soon!',
-          timestamp: new Date(),
-          isRead: false,
-        }
-      });
-      onClose();
-    }
+    // Create a video object in the backend first
+    const newVideo = {
+      id: Date.now().toString(),
+      title: formData.title,
+      description: 'AI-generated video with avatar and voice synthesis',
+      type: formData.type,
+      projectId: formData.projectId || state.projects[0]?.id || '',
+      projectTitle: formData.projectId 
+        ? state.projects.find(p => p.id === formData.projectId)?.title 
+        : state.projects[0]?.title || 'Unknown Project',
+      status: 'draft',
+      duration: 0,
+      thumbnailUrl: 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=400',
+      videoUrl: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      views: 0,
+      creator: {
+        name: 'Current User',
+        email: 'user@example.com',
+        avatar: ''
+      },
+      metadata: {
+        resolution: '1080p',
+        format: 'mp4',
+        size: null,
+        avatar: '',
+        voice: '',
+        language: 'English',
+        style: 'professional',
+        includeSubtitles: true,
+        backgroundMusic: false
+      }
+    };
+    
+    dispatch({ type: 'ADD_VIDEO', payload: newVideo });
+    
+    // Close the modal and navigate to the editor page
+    onClose();
+    
+    // Navigate to the video editor page with the video ID
+    navigate(`/videos/editor/${newVideo.id}`);
   };
 
   const handleClose = () => {
