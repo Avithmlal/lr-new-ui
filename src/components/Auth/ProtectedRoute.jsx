@@ -3,6 +3,11 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 export function ProtectedRoute({ children }) {
+  // AUTHENTICATION TEMPORARILY DISABLED
+  // Always render children without authentication check
+  return children;
+
+  /*
   const { isAuthenticated, loading } = useAuth();
   const location = useLocation();
 
@@ -23,10 +28,16 @@ export function ProtectedRoute({ children }) {
   }
 
   return children;
+  */
 }
 
 // Component for routes that should only be accessible to unauthenticated users
 export function PublicRoute({ children }) {
+  // AUTHENTICATION TEMPORARILY DISABLED
+  // Always render children without authentication check
+  return children;
+
+  /*
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
@@ -46,4 +57,5 @@ export function PublicRoute({ children }) {
   }
 
   return children;
+  */
 }

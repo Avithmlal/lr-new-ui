@@ -31,10 +31,18 @@ import { ProtectedRoute, PublicRoute } from './components/Auth/ProtectedRoute';
 function App() {
   return (
     <AppProvider>
-      <AuthProvider>
+      {/* 
+        AUTHENTICATION TEMPORARILY DISABLED
+        Uncomment the AuthProvider and protected routes when ready to re-enable authentication
+      */}
+      {/* <AuthProvider> */}
         <Router>
           <Routes>
-            {/* Public routes */}
+            {/* 
+              Authentication routes - temporarily disabled
+              Uncomment when ready to re-enable authentication
+            */}
+            {/*
             <Route path="/login" element={
               <PublicRoute>
                 <Login />
@@ -45,40 +53,40 @@ function App() {
                 <ForgotPassword />
               </PublicRoute>
             } />
+            */}
             
-            {/* Protected routes */}
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
-            }>
-            {/* User Routes */}
-            <Route index element={<Dashboard />} />
-            <Route path="projects" element={<Projects />} />
-            <Route path="projects/:projectId" element={<ProjectDetail />} />
-            <Route path="courses" element={<Courses />} />
-            <Route path="courses/:courseId" element={<CourseDetail />} />
-            <Route path="videos" element={<Videos />} />
-            <Route path="chat" element={<Chat />} />
-            <Route path="avatars" element={<Avatars />} />
-            <Route path="settings" element={<Settings />} />
-            
-            {/* Knowledge Transfer Routes */}
-            <Route path="knowledge-transfer" element={<KnowledgeTransfer />} />
-            <Route path="knowledge-transfer/packages/:packageId" element={<KnowledgeTransferPackageDetail />} />
-            <Route path="knowledge-transfer/enrollments/:enrollmentId" element={<KnowledgeTransferEnrollmentDetail />} />
-            <Route path="knowledge-transfer/assessments/:assessmentId" element={<KnowledgeTransferAssessment />} />
-            
-            {/* Admin Routes - now accessible via role-based permissions */}
-            <Route path="organizations" element={<Organizations />} />
-            <Route path="organizations/:organizationId" element={<OrganizationDetail />} />
-            <Route path="users" element={<Users />} />
-            <Route path="users/:userId" element={<UserDetail />} />
-            <Route path="analytics" element={<Analytics />} />
+            {/* 
+              Protected routes - temporarily made public
+              Wrap with ProtectedRoute when ready to re-enable authentication
+            */}
+            <Route path="/" element={<Layout />}>
+              {/* User Routes */}
+              <Route index element={<Dashboard />} />
+              <Route path="projects" element={<Projects />} />
+              <Route path="projects/:projectId" element={<ProjectDetail />} />
+              <Route path="courses" element={<Courses />} />
+              <Route path="courses/:courseId" element={<CourseDetail />} />
+              <Route path="videos" element={<Videos />} />
+              <Route path="chat" element={<Chat />} />
+              <Route path="avatars" element={<Avatars />} />
+              <Route path="settings" element={<Settings />} />
+              
+              {/* Knowledge Transfer Routes */}
+              <Route path="knowledge-transfer" element={<KnowledgeTransfer />} />
+              <Route path="knowledge-transfer/packages/:packageId" element={<KnowledgeTransferPackageDetail />} />
+              <Route path="knowledge-transfer/enrollments/:enrollmentId" element={<KnowledgeTransferEnrollmentDetail />} />
+              <Route path="knowledge-transfer/assessments/:assessmentId" element={<KnowledgeTransferAssessment />} />
+              
+              {/* Admin Routes - now accessible via role-based permissions */}
+              <Route path="organizations" element={<Organizations />} />
+              <Route path="organizations/:organizationId" element={<OrganizationDetail />} />
+              <Route path="users" element={<Users />} />
+              <Route path="users/:userId" element={<UserDetail />} />
+              <Route path="analytics" element={<Analytics />} />
             </Route>
           </Routes>
         </Router>
-      </AuthProvider>
+      {/* </AuthProvider> */}
     </AppProvider>
   );
 }

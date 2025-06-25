@@ -2,22 +2,24 @@ import React, { useState } from 'react';
 import { Bell, Search, User, HelpCircle, Settings, Shield, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp, isAdmin } from '../../contexts/AppContext';
-import { useAuth } from '../../contexts/AuthContext';
+// import { useAuth } from '../../contexts/AuthContext'; // Temporarily commented out
 import { useGuidance } from '../../hooks/useGuidance';
 import { HintTooltip } from '../Guidance/HintTooltip';
 
 export function Header() {
   const { state } = useApp();
-  const { logout, user: authUser } = useAuth();
+  // const { logout, user: authUser } = useAuth(); // Temporarily commented out
   const navigate = useNavigate();
   const { showTooltips, toggleTooltips, resetGuidance } = useGuidance();
   const [showGuidanceMenu, setShowGuidanceMenu] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const unreadMessages = state.systemMessages.filter(msg => !msg.isRead).length;
 
+  // Temporarily disabled logout functionality
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    // logout(); // Temporarily commented out
+    // navigate('/login'); // Temporarily commented out
+    console.log('Logout functionality temporarily disabled');
   };
 
   return (
@@ -117,7 +119,8 @@ export function Header() {
                     {state.currentUser.firstName} {state.currentUser.lastName}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {authUser?.email || state.currentUser.email}
+                    {/* {authUser?.email || state.currentUser.email} */}
+                    {state.currentUser.email} {/* Temporarily simplified */}
                   </p>
                 </div>
               </button>
@@ -129,7 +132,8 @@ export function Header() {
                       {state.currentUser.firstName} {state.currentUser.lastName}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {authUser?.email || state.currentUser.email}
+                      {/* {authUser?.email || state.currentUser.email} */}
+                      {state.currentUser.email} {/* Temporarily simplified */}
                     </p>
                   </div>
                   <div className="p-2">
