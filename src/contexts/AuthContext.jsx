@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import { createContext, useContext, useReducer, useEffect } from 'react';
 import { loginService } from '../api/authServices';
+import { getMyAccount, transformUserData, checkPermission, getPermittedRoutes } from '../api/userService';
 import { getAccessToken, removeTokens, isAuthenticated } from '../services/storageService';
 
 const AuthContext = createContext(null);
@@ -7,6 +8,7 @@ const AuthContext = createContext(null);
 const initialState = {
   isAuthenticated: false,
   user: null,
+  userDetails: null,
   loading: true,
   error: null,
 };
@@ -24,6 +26,7 @@ function authReducer(state, action) {
         ...state,
         isAuthenticated: true,
         user: action.payload.user,
+        userDetails: action.payload.userDetails,
         loading: false,
         error: null,
       };
@@ -32,6 +35,7 @@ function authReducer(state, action) {
         ...state,
         isAuthenticated: false,
         user: null,
+        userDetails: null,
         loading: false,
         error: action.payload,
       };
@@ -40,6 +44,7 @@ function authReducer(state, action) {
         ...state,
         isAuthenticated: false,
         user: null,
+        userDetails: null,
         loading: false,
         error: null,
       };
@@ -51,7 +56,8 @@ function authReducer(state, action) {
     case 'SET_USER':
       return {
         ...state,
-        user: action.payload,
+        user: action.payload.user,
+        userDetails: action.payload.userDetails,
         isAuthenticated: true,
         loading: false,
       };
@@ -68,27 +74,42 @@ function authReducer(state, action) {
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState);
 
-  // Check authentication status on mount
+  // Check authentication status and fetch user details on mount
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
         const authenticated = isAuthenticated();
         if (authenticated) {
-          // User has valid token, set as authenticated
-          // In a real app, you might want to validate the token with the server
-          dispatch({
-            type: 'SET_USER',
-            payload: {
-              // You can decode token or fetch user info here
-              email: 'admin@leaproad.com', // Placeholder
-              role: 'admin',
-            },
-          });
+          // Fetch user details from my-account API
+          const userResponse = await getMyAccount();
+          
+          if (userResponse.success && userResponse.data) {
+            const transformedUser = transformUserData(userResponse.data);
+            
+            dispatch({
+              type: 'SET_USER',
+              payload: {
+                user: {
+                  email: transformedUser.email,
+                  firstName: transformedUser.firstName,
+                  lastName: transformedUser.lastName,
+                  role: transformedUser.role,
+                },
+                userDetails: transformedUser,
+              },
+            });
+          } else {
+            // Token exists but API call failed, likely invalid token
+            removeTokens();
+            dispatch({ type: 'SET_LOADING', payload: false });
+          }
         } else {
           dispatch({ type: 'SET_LOADING', payload: false });
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        // If there's an error fetching user details, clear tokens
+        removeTokens();
         dispatch({ type: 'SET_LOADING', payload: false });
       }
     };
@@ -102,17 +123,29 @@ export function AuthProvider({ children }) {
       
       const response = await loginService(email, password);
       
-      // Extract user info from response
-      const userData = {
-        email: email,
-        role: 'admin', // You can get this from response if available
-        ...response.data?.user, // Include any user data from response
-      };
+      // After successful login, fetch user details
+      const userResponse = await getMyAccount();
+      
+      if (userResponse.success && userResponse.data) {
+        const transformedUser = transformUserData(userResponse.data);
+        
+        const userData = {
+          email: transformedUser.email,
+          firstName: transformedUser.firstName,
+          lastName: transformedUser.lastName,
+          role: transformedUser.role,
+        };
 
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: { user: userData },
-      });
+        dispatch({
+          type: 'LOGIN_SUCCESS',
+          payload: { 
+            user: userData,
+            userDetails: transformedUser,
+          },
+        });
+      } else {
+        throw new Error('Failed to fetch user details after login');
+      }
 
       return response;
     } catch (error) {
@@ -142,10 +175,22 @@ export function AuthProvider({ children }) {
     dispatch({ type: 'CLEAR_ERROR' });
   };
 
+  // Role-based permission utilities
+  const hasPermission = (permission) => {
+    const userRole = state.userDetails?.role;
+    return checkPermission(userRole, permission);
+  };
+
+  const getPermissions = () => {
+    const userRole = state.userDetails?.role;
+    return getPermittedRoutes(userRole);
+  };
+
   const value = {
     // State
     isAuthenticated: state.isAuthenticated,
     user: state.user,
+    userDetails: state.userDetails,
     loading: state.loading,
     error: state.error,
     
@@ -153,6 +198,10 @@ export function AuthProvider({ children }) {
     login,
     logout,
     clearError,
+    
+    // Role-based utilities
+    hasPermission,
+    getPermissions,
   };
 
   return (

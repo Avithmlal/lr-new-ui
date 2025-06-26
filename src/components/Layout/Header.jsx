@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Bell, Search, User, HelpCircle, Settings, Shield, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp, isAdmin } from '../../contexts/AppContext';
-// import { useAuth } from '../../contexts/AuthContext'; // Temporarily commented out
+import { useAuth } from '../../contexts/AuthContext'; // Temporarily commented out
 import { useGuidance } from '../../hooks/useGuidance';
 import { HintTooltip } from '../Guidance/HintTooltip';
+import { RoleBasedComponent } from '../Auth/ProtectedRoute';
+import { PERMISSIONS, getRoleDisplayName, isAdmin as checkIsAdmin } from '../../utils/roleUtils';
 
 export function Header() {
   const { state } = useApp();
-  // const { logout, user: authUser } = useAuth(); // Temporarily commented out
+  const { logout, user: authUser, userDetails } = useAuth();
   const navigate = useNavigate();
   const { showTooltips, toggleTooltips, resetGuidance } = useGuidance();
   const [showGuidanceMenu, setShowGuidanceMenu] = useState(false);
@@ -17,8 +19,8 @@ export function Header() {
 
   // Temporarily disabled logout functionality
   const handleLogout = () => {
-    // logout(); // Temporarily commented out
-    // navigate('/login'); // Temporarily commented out
+    logout(); // Temporarily commented out
+    navigate('/login'); // Temporarily commented out
     console.log('Logout functionality temporarily disabled');
   };
 
@@ -36,27 +38,27 @@ export function Header() {
               />
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
-            {/* Admin Badge - Only shown to admins */}
-            {isAdmin(state.currentUser) && (
-              <div className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-xs font-medium flex items-center">
+            {/* Role Badge - Shows user's role */}
+            <RoleBasedComponent requiredPermission={PERMISSIONS.USERS}>
+              <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium flex items-center">
                 <Shield className="w-3 h-3 mr-1" />
-                Admin
+                {getRoleDisplayName(userDetails?.role)}
               </div>
-            )}
-            
+            </RoleBasedComponent>
+
             {/* Guidance Menu */}
             <div className="relative">
               <HintTooltip hint="Access help and guidance options" position="bottom">
-                <button 
+                <button
                   onClick={() => setShowGuidanceMenu(!showGuidanceMenu)}
                   className="relative p-2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <HelpCircle className="w-5 h-5" />
                 </button>
               </HintTooltip>
-              
+
               {showGuidanceMenu && (
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   <div className="p-4 border-b border-gray-200">
@@ -105,9 +107,9 @@ export function Header() {
                 )}
               </button>
             </HintTooltip>
-            
+
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
               >
@@ -116,11 +118,10 @@ export function Header() {
                 </div>
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium text-gray-900">
-                    {state.currentUser.firstName} {state.currentUser.lastName}
+                    {userDetails?.firstName || authUser?.firstName || state.currentUser.firstName} {userDetails?.lastName || authUser?.lastName || state.currentUser.lastName}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {/* {authUser?.email || state.currentUser.email} */}
-                    {state.currentUser.email} {/* Temporarily simplified */}
+                    {userDetails?.email || authUser?.email || state.currentUser.email}
                   </p>
                 </div>
               </button>
@@ -129,11 +130,16 @@ export function Header() {
                 <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
                   <div className="p-4 border-b border-gray-200">
                     <p className="font-medium text-gray-900">
-                      {state.currentUser.firstName} {state.currentUser.lastName}
+                      {userDetails?.firstName || authUser?.firstName || state.currentUser.firstName} {userDetails?.lastName || authUser?.lastName || state.currentUser.lastName}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {/* {authUser?.email || state.currentUser.email} */}
-                      {state.currentUser.email} {/* Temporarily simplified */}
+                      {userDetails?.email || authUser?.email || state.currentUser.email}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      {getRoleDisplayName(userDetails?.role)}
+                      {userDetails?.organization && (
+                        <span> • {userDetails.organization.name}</span>
+                      )}
                     </p>
                   </div>
                   <div className="p-2">
