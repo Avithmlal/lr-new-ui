@@ -1,4 +1,4 @@
-// React import not needed with automatic JSX runtime
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { canAccessRoute, getRedirectRoute } from '../../utils/roleUtils';
