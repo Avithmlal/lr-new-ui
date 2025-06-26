@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Bell, Search, User, HelpCircle, Settings, Shield, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useApp, isAdmin } from '../../contexts/AppContext';
-// import { useAuth } from '../../contexts/AuthContext'; // Temporarily commented out
+import { useAuth } from '../../contexts/AuthContext'; // Temporarily commented out
 import { useGuidance } from '../../hooks/useGuidance';
 import { HintTooltip } from '../Guidance/HintTooltip';
 import { RoleBasedComponent } from '../Auth/ProtectedRoute';
@@ -19,8 +19,8 @@ export function Header() {
 
   // Temporarily disabled logout functionality
   const handleLogout = () => {
-    // logout(); // Temporarily commented out
-    // navigate('/login'); // Temporarily commented out
+    logout(); // Temporarily commented out
+    navigate('/login'); // Temporarily commented out
     console.log('Logout functionality temporarily disabled');
   };
 
