@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed with automatic JSX runtime
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';

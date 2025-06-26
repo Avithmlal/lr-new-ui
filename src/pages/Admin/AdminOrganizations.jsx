@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { 
   Plus, 
   Search, 
@@ -17,6 +17,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../contexts/AppContext';
 import { Pagination } from '../../components/Common/Pagination';
+import { CreateOrganizationModal } from '../../components/Organizations/CreateOrganizationModal';
 
 export function AdminOrganizations() {
   const { state, dispatch } = useApp();
@@ -26,6 +27,24 @@ export function AdminOrganizations() {
   const [planFilter, setPlanFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [organizationsPerPage] = useState(10);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Handle organization creation success
+  const handleCreateSuccess = (newOrganization) => {
+    // Add the new organization to the context or refetch data
+    dispatch({
+      type: 'ADD_SYSTEM_MESSAGE',
+      payload: {
+        id: Date.now().toString(),
+        type: 'success',
+        title: 'Organization Created',
+        message: `Organization "${newOrganization.name || 'Unknown'}" has been created successfully.`,
+        timestamp: new Date(),
+        isRead: false,
+      }
+    });
+    setShowCreateModal(false);
+  };
 
   // Filter organizations
   const filteredOrganizations = state.organizations.filter(org => {
@@ -94,7 +113,10 @@ export function AdminOrganizations() {
           <h1 className="text-2xl font-bold text-gray-900">Organizations</h1>
           <p className="text-gray-600 mt-1">Manage customer organizations and their settings</p>
         </div>
-        <button className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add Organization
         </button>
@@ -257,6 +279,13 @@ export function AdminOrganizations() {
           className="p-4 border-t border-gray-200"
         />
       </div>
+
+      {/* Create Organization Modal */}
+      <CreateOrganizationModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 }
