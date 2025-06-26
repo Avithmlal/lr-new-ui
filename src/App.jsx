@@ -1,4 +1,4 @@
-import React from 'react';
+// React import not needed with automatic JSX runtime
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './contexts/AppContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -27,6 +27,7 @@ import { Analytics } from './pages/Analytics';
 import { Login } from './pages/Login';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ProtectedRoute, PublicRoute } from './components/Auth/ProtectedRoute';
+import { PERMISSIONS } from './utils/roleUtils';
 
 function App() {
   return (
@@ -69,12 +70,32 @@ function App() {
             <Route path="knowledge-transfer/enrollments/:enrollmentId" element={<KnowledgeTransferEnrollmentDetail />} />
             <Route path="knowledge-transfer/assessments/:assessmentId" element={<KnowledgeTransferAssessment />} />
             
-            {/* Admin Routes - now accessible via role-based permissions */}
-            <Route path="organizations" element={<Organizations />} />
-            <Route path="organizations/:organizationId" element={<OrganizationDetail />} />
-            <Route path="users" element={<Users />} />
-            <Route path="users/:userId" element={<UserDetail />} />
-            <Route path="analytics" element={<Analytics />} />
+            {/* Admin Routes - with role-based access control */}
+            <Route path="organizations" element={
+              <ProtectedRoute requiredPermission={PERMISSIONS.ORGANIZATIONS}>
+                <Organizations />
+              </ProtectedRoute>
+            } />
+            <Route path="organizations/:organizationId" element={
+              <ProtectedRoute requiredPermission={PERMISSIONS.ORGANIZATIONS}>
+                <OrganizationDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="users" element={
+              <ProtectedRoute requiredPermission={PERMISSIONS.USERS}>
+                <Users />
+              </ProtectedRoute>
+            } />
+            <Route path="users/:userId" element={
+              <ProtectedRoute requiredPermission={PERMISSIONS.USERS}>
+                <UserDetail />
+              </ProtectedRoute>
+            } />
+            <Route path="analytics" element={
+              <ProtectedRoute requiredPermission={PERMISSIONS.ANALYTICS}>
+                <Analytics />
+              </ProtectedRoute>
+            } />
             </Route>
           </Routes>
         </Router>
