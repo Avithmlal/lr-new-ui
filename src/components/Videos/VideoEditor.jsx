@@ -4,7 +4,7 @@ import {
   ChevronRight, ChevronLeft, Eye, Volume2, VolumeX, Sliders, Layers, Film, Sparkles, 
   CheckCircle, AlertCircle, Clock as ClockIcon, Zap, Monitor, User, Headphones, 
   Presentation as PresentationChart, Video, Camera, Loader, Save, FastForward, 
-  SkipForward, Upload, Wand2, Link, ExternalLink
+  SkipForward, Upload, Wand2, Link, ExternalLink, Share2
 } from 'lucide-react';
 import { useApp } from '../../contexts/AppContext';
 
