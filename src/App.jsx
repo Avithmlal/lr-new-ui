@@ -32,18 +32,10 @@ import { ProtectedRoute, PublicRoute } from './components/Auth/ProtectedRoute';
 function App() {
   return (
     <AppProvider>
-      {/* 
-        AUTHENTICATION TEMPORARILY DISABLED
-        Uncomment the AuthProvider and protected routes when ready to re-enable authentication
-      */}
-      {/* <AuthProvider> */}
+      <AuthProvider>
         <Router>
           <Routes>
-            {/* 
-              Authentication routes - temporarily disabled
-              Uncomment when ready to re-enable authentication
-            */}
-            {/*
+            {/* Authentication routes */}
             <Route path="/login" element={
               <PublicRoute>
                 <Login />
@@ -54,13 +46,13 @@ function App() {
                 <ForgotPassword />
               </PublicRoute>
             } />
-            */}
             
-            {/* 
-              Protected routes - temporarily made public
-              Wrap with ProtectedRoute when ready to re-enable authentication
-            */}
-            <Route path="/" element={<Layout />}>
+            {/* Protected routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Layout />
+              </ProtectedRoute>
+            }>
               {/* User Routes */}
               <Route index element={<Dashboard />} />
               <Route path="projects" element={<Projects />} />
@@ -87,10 +79,14 @@ function App() {
             </Route>
             
             {/* Video Editor Page - Full screen outside of main layout */}
-            <Route path="videos/editor/:videoId" element={<VideoEditorPage />} />
+            <Route path="videos/editor/:videoId" element={
+              <ProtectedRoute>
+                <VideoEditorPage />
+              </ProtectedRoute>
+            } />
           </Routes>
         </Router>
-      {/* </AuthProvider> */}
+      </AuthProvider>
     </AppProvider>
   );
 }

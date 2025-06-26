@@ -34,17 +34,6 @@ export const getOrganizations = async (
 
     query += params.join('&');
 
-    // AUTHENTICATION TEMPORARILY DISABLED
-    // Return mock data instead of making API call
-    console.log('Organization API call bypassed');
-    return {
-      data: [],
-      info: {
-        totalCount: 0
-      }
-    };
-
-    /*
     const response = await axiosInstance.get(`/admin/organizations${query}`);
     
     if (response?.data) {
@@ -52,13 +41,7 @@ export const getOrganizations = async (
     } else {
       throw new Error('Organizations fetch failed');
     }
-    */
   } catch (error) {
-    // If this is our mocked response, return it
-    if (error.__MOCKED__) {
-      return error.response.data;
-    }
-    
     console.error('Error fetching organizations:', error);
     throw error;
   }
@@ -67,14 +50,6 @@ export const getOrganizations = async (
 // Get organization details by ID
 export const getOrganizationDetails = async (organizationId) => {
   try {
-    // AUTHENTICATION TEMPORARILY DISABLED
-    // Return mock data instead of making API call
-    console.log('Organization details API call bypassed');
-    return {
-      data: null
-    };
-
-    /*
     const response = await axiosInstance.get(`/admin/organizations/${organizationId}`);
     
     if (response?.data) {
@@ -82,7 +57,6 @@ export const getOrganizationDetails = async (organizationId) => {
     } else {
       throw new Error('Organization details fetch failed');
     }
-    */
   } catch (error) {
     console.error('Error fetching organization details:', error);
     throw error;
@@ -92,14 +66,6 @@ export const getOrganizationDetails = async (organizationId) => {
 // Create new organization
 export const createOrganization = async (organizationData) => {
   try {
-    // AUTHENTICATION TEMPORARILY DISABLED
-    // Return mock data instead of making API call
-    console.log('Organization creation API call bypassed');
-    return {
-      data: { id: 'mock-org-id' }
-    };
-
-    /*
     const response = await axiosInstance.post('/admin/organizations', organizationData);
     
     if (response?.data) {
@@ -107,7 +73,6 @@ export const createOrganization = async (organizationData) => {
     } else {
       throw new Error('Organization creation failed: No data received.');
     }
-    */
   } catch (error) {
     console.error('Error creating organization:', error.response);
     throw new Error(
@@ -119,14 +84,6 @@ export const createOrganization = async (organizationData) => {
 // Update organization
 export const updateOrganization = async (organizationId, updateData) => {
   try {
-    // AUTHENTICATION TEMPORARILY DISABLED
-    // Return mock data instead of making API call
-    console.log('Organization update API call bypassed');
-    return {
-      data: { id: organizationId }
-    };
-
-    /*
     const response = await axiosInstance.patch(`/admin/organizations/${organizationId}`, updateData);
     
     if (response?.data) {
@@ -134,7 +91,6 @@ export const updateOrganization = async (organizationId, updateData) => {
     } else {
       throw new Error('Organization update failed');
     }
-    */
   } catch (error) {
     console.error('Error updating organization:', error);
     throw error;
@@ -144,14 +100,6 @@ export const updateOrganization = async (organizationId, updateData) => {
 // Delete organization (if needed)
 export const deleteOrganization = async (organizationId) => {
   try {
-    // AUTHENTICATION TEMPORARILY DISABLED
-    // Return mock data instead of making API call
-    console.log('Organization deletion API call bypassed');
-    return {
-      data: { success: true }
-    };
-
-    /*
     const response = await axiosInstance.delete(`/admin/organizations/${organizationId}`);
     
     if (response?.data) {
@@ -159,7 +107,6 @@ export const deleteOrganization = async (organizationId) => {
     } else {
       throw new Error('Organization deletion failed');
     }
-    */
   } catch (error) {
     console.error('Error deleting organization:', error);
     throw error;

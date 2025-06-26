@@ -20,10 +20,6 @@ const axiosInstance = axios.create({
   },
 });
 
-// AUTHENTICATION TEMPORARILY DISABLED
-// Comment out the authentication interceptors to bypass authentication checks
-
-/*
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = getToken();
@@ -54,34 +50,6 @@ axiosInstance.interceptors.response.use(
       }
     }
     return Promise.reject(error);
-  }
-);
-*/
-
-// Mock successful response for API calls during authentication bypass
-axiosInstance.interceptors.request.use(
-  (config) => {
-    console.log('API request bypassed:', config.url);
-    
-    // Check if this is an authentication-related endpoint
-    if (config.url.includes('/auth/') || config.url.includes('/organizations')) {
-      // Return a mock successful response
-      return Promise.reject({
-        response: {
-          status: 200,
-          data: {
-            data: [],
-            info: {
-              totalCount: 0
-            }
-          }
-        },
-        isAxiosError: true,
-        __MOCKED__: true
-      });
-    }
-    
-    return config;
   }
 );
 
