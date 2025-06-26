@@ -9,7 +9,6 @@ export function VideoEditorPage() {
   const navigate = useNavigate();
   const { state } = useApp();
   const [videoData, setVideoData] = useState(null);
-  const [isEditorOpen, setIsEditorOpen] = useState(true);
 
   useEffect(() => {
     // Find the video in the state
@@ -21,11 +20,6 @@ export function VideoEditorPage() {
       navigate('/videos');
     }
   }, [videoId, state.videos, navigate]);
-
-  const handleClose = () => {
-    setIsEditorOpen(false);
-    navigate('/videos');
-  };
 
   if (!videoData) {
     return (
@@ -60,11 +54,7 @@ export function VideoEditorPage() {
       </div>
 
       {/* Editor */}
-      <VideoEditor
-        isOpen={isEditorOpen}
-        onClose={handleClose}
-        videoData={videoData}
-      />
+      <VideoEditor videoData={videoData} />
     </div>
   );
 }
